@@ -252,6 +252,7 @@ function statusChip(key){
 function render(){
   document.querySelectorAll("#tabs button").forEach(b => b.setAttribute("aria-current", b.dataset.tab === tab));
   const app = document.getElementById("app");
+  app.classList.toggle("is-home", tab === "dag");
   app.innerHTML = tab === "dag" ? viewHome() : tab === "skema" ? viewSchedule() : tab === "plan" ? viewPlan() : viewTests();
   if (tab === "dag") bindTilt();
 }
@@ -281,11 +282,8 @@ function viewHome(){
   const tm = addDays(d,1), tItems = plannedFor(tm);
   const status = r ? LEVEL[r.level].word : "Not checked in";
   return `
-  <div class="top">
-    <div class="hello"><span class="eyebrow">${DAYL[dow(d)]} · ${fmt(d)}</span><b>Hey Mathias</b></div>
-    <button class="roundbtn" data-act="settings" aria-label="Settings">${ICON.gear}<span id="syncdot" data-state="${GH.state}"></span></button>
-  </div>
-  <section class="stage ${art ? (isCutout(art) ? "cut" : "fill") : "drawn"}" id="hero">
+  <section class="stage bleed ${art ? (isCutout(art) ? "cut" : "fill") : "drawn"}" id="hero">
+    <button class="roundbtn floatgear" data-act="settings" aria-label="Settings">${ICON.gear}<span id="syncdot" data-state="${GH.state}"></span></button>
     <div class="fig">${art ? mediaTag(art) : swoleSVG(mood)}</div>
     <div class="panel">
       <span class="handle"></span>
