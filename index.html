@@ -346,6 +346,15 @@ html.lock,html.lock body{overflow:hidden;overscroll-behavior:none}
 .r2 .st{padding:3px 8px;font-size:10.5px}
 .sheet2 .pill{padding:10px 18px;font-size:12.5px}
 @media (max-height:700px){.today2-h span{display:none}.hero2{min-height:90px}}
+
+/* ===== docked tab bar (sits on the bottom edge, home indicator inside it) ===== */
+.tabs{padding:0;pointer-events:auto}
+.tabs nav{max-width:none;margin:0;border-radius:22px 22px 0 0;border-width:1px 0 0 0;padding:6px max(10px, env(safe-area-inset-right,0px)) calc(4px + env(safe-area-inset-bottom,0px)) max(10px, env(safe-area-inset-left,0px));box-shadow:0 -10px 30px rgba(0,0,0,.35),inset 0 1px 0 var(--hi)}
+.tabs nav{grid-template-columns:repeat(4,minmax(0,1fr))}
+.tabs button{padding:7px 0 5px;max-width:110px;justify-self:center;width:100%}
+.app{padding-bottom:calc(86px + env(safe-area-inset-bottom,0px))}
+.app.is-home .home2{bottom:calc(62px + env(safe-area-inset-bottom,0px))}
+.toast{bottom:calc(76px + env(safe-area-inset-bottom,0px))}
 </style>
 </head>
 <body>
@@ -358,7 +367,7 @@ html.lock,html.lock body{overflow:hidden;overscroll-behavior:none}
 </nav></div>
 <div class="sheet" id="sheet" hidden><div class="in" id="sheetIn"></div></div>
 <div class="toast" id="toast" hidden></div>
-<script src="plan.js?v=6"></script>
-<script src="app.js?v=6"></script>
+<script src="plan.js?v=7"></script>
+<script src="app.js?v=7"></script>
 </body>
 </html>
