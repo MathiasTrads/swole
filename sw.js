@@ -1,7 +1,7 @@
 /* Swole service worker: offline shell + push reminders */
-const CACHE = "swole-v7";
+const CACHE = "swole-v9";
 const SHELL = [
-  "./", "index.html", "plan.js?v=7", "app.js?v=7", "manifest.webmanifest",
+  "./", "index.html", "plan.js?v=9", "app.js?v=9", "manifest.webmanifest",
   "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png",
   "media/swole.webp", "media/swole-bench.webp", "media/swole-ready.webp", "media/swole-recover.webp",
 ];

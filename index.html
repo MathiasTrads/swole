@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Swole</title>
 <meta name="description" content="Swole, your Muay Thai coach.">
-<meta name="theme-color" content="#1B1718">
+<meta name="theme-color" content="#FD3A22">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -355,6 +355,48 @@ html.lock,html.lock body{overflow:hidden;overscroll-behavior:none}
 .app{padding-bottom:calc(86px + env(safe-area-inset-bottom,0px))}
 .app.is-home .home2{bottom:calc(62px + env(safe-area-inset-bottom,0px))}
 .toast{bottom:calc(76px + env(safe-area-inset-bottom,0px))}
+
+/* ===== scream red everywhere ===== */
+:root{
+  --scream:#FD3A22;
+  --bg-1:#FD3A22; --bg-2:#F2331C;
+  --card:rgba(22,12,12,.52); --card-2:rgba(22,12,12,.62); --card-solid:#2A1513;
+  --edge:rgba(255,255,255,.12); --hi:rgba(255,255,255,.10);
+  --muted:rgba(255,232,226,.74);
+}
+html,body{background:var(--scream)}
+body{background:var(--scream)!important}
+.sheet{background:var(--scream)}
+.hero2{background:var(--scream)}
+.hero2::before,.hero2::after{display:none}
+.sheet2{background:rgba(20,10,10,.58);border-color:rgba(255,255,255,.14);box-shadow:0 18px 40px rgba(60,0,0,.35),inset 0 1px 0 rgba(255,255,255,.12)}
+.tabs nav{background:rgba(20,10,10,.62);border-color:rgba(255,255,255,.14);box-shadow:0 -10px 30px rgba(60,0,0,.25),inset 0 1px 0 rgba(255,255,255,.1)}
+.tabs button{color:rgba(255,232,226,.7)}
+.tabs button[aria-current=true]{background:rgba(255,255,255,.1);color:#fff}
+.tabs button[aria-current=true] svg{color:#fff}
+.hero2 .floatgear{background:rgba(20,10,10,.4)}
+.brand b{color:#1A0605}
+.say2 b,.stars i.on,.go2,.st.go{color:#FF8A78}
+.block h3,.stats dt,.field label,.phase .dates,.ym .ph{color:#FF9C8C}
+.ex .dose{color:#FFB3A6}
+.r2.kind-strength .t2{border-color:#fff}
+.k-strength,.ym .g i.k-strength{background:#fff}
+.k-test,.ym .g i.k-test{background:#1A0605}
+.cell.today{border-color:#fff;box-shadow:0 0 0 1px #fff}
+.wk .d.today b{color:#fff;text-decoration:underline}
+.ci-prog i{background:rgba(0,0,0,.2)}
+.ci-prog i.on{background:#fff}
+.scale button[aria-pressed=true],.scale button:active,.rpe button[aria-pressed=true]{background:#fff;color:#1A0605}
+.opt[aria-pressed=true],.ci-opt[aria-pressed=true],.ci-opt:active{background:rgba(255,255,255,.18);color:#fff;border-color:#fff}
+.ci-opt span:last-child{color:#fff!important}
+.timer.work{background:#fff;color:#1A0605}
+.banner.n{background:rgba(22,12,12,.35);color:#fff;border-color:rgba(255,255,255,.2)}
+
+/* ink buttons on scream red */
+.pill,.btn.red,.seg button[aria-pressed=true]{background:#140808;color:#fff;box-shadow:0 6px 16px rgba(60,0,0,.35),inset 0 1px 0 rgba(255,255,255,.12)}
+.iconbtn,.snav button,.roundbtn{color:#fff}
+.btn{color:#fff}
+.timer .btn.red{background:#140808;color:#fff}
 </style>
 </head>
 <body>
@@ -367,7 +409,7 @@ html.lock,html.lock body{overflow:hidden;overscroll-behavior:none}
 </nav></div>
 <div class="sheet" id="sheet" hidden><div class="in" id="sheetIn"></div></div>
 <div class="toast" id="toast" hidden></div>
-<script src="plan.js?v=7"></script>
-<script src="app.js?v=7"></script>
+<script src="plan.js?v=9"></script>
+<script src="app.js?v=9"></script>
 </body>
 </html>
