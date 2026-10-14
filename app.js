@@ -257,6 +257,7 @@ function render(){
   document.querySelectorAll("#tabs button").forEach(b => b.setAttribute("aria-current", b.dataset.tab === tab));
   const app = document.getElementById("app");
   app.classList.toggle("is-home", tab === "dag");
+  document.documentElement.classList.toggle("lock", tab === "dag");
   app.innerHTML = tab === "dag" ? viewHome() : tab === "skema" ? viewSchedule() : tab === "plan" ? viewPlan() : viewTests();
   if (tab === "dag") bindTilt();
 }
@@ -297,12 +298,12 @@ function viewHome(){
         <span class="stars" aria-label="Readiness ${stars} of 5">${[1,2,3,4,5].map(i => `<i class="${i <= stars ? "on" : ""}">★</i>`).join("")}</span>
         <span class="wk2">${esc(wk)}</span>
       </div>
-      <p class="say2"><b>Swole</b> ${lines.map(esc).join(" ")}</p>
+      <button class="say2" data-act="saytoggle" aria-expanded="false"><b>Swole</b> <span>${lines.map(esc).join(" ")}</span><i aria-hidden="true">›</i></button>
       <div class="today2">
         <div class="today2-h"><h2>Today</h2><span>Tomorrow · ${tItems.length ? tItems.map(it => esc(SESS[it.id].title.split(" · ")[0] === "Muay Thai" ? "Muay Thai" : SESS[it.id].title.split(" · ")[0])).join(" + ") : "Rest"}</span></div>
         ${items.length ? items.map(it => { const s2 = SESS[it.id], k = key+"_"+it.slot;
-          return `<button class="r2 kind-${s2.kind}" data-open="${k}|${it.id}"><span class="t2">${esc(slotTime(it))}</span><span class="n2">${esc(s2.title)}<small>${esc(s2.dur)} · ${esc(s2.sub)}</small></span>${statusChip(k) || `<span class="go2">›</span>`}</button>`; }).join("")
-          : `<div class="r2"><span class="t2">All day</span><span class="n2">Rest day<small>Walk, eat well, sleep 8 hours.</small></span><span></span></div>`}
+          return `<button class="r2 kind-${s2.kind}" data-open="${k}|${it.id}"><span class="t2">${esc(slotTime(it))}</span><span class="n2">${esc(s2.title)}</span>${statusChip(k) || `<span class="go2">›</span>`}</button>`; }).join("")
+          : `<div class="r2"><span class="t2">All day</span><span class="n2">Rest day · walk, eat, sleep</span><span></span></div>`}
       </div>
       <button class="pill wide" data-act="checkin">${ci ? "Redo check-in" : "Start check-in"}</button>
     </div>
@@ -642,6 +643,7 @@ document.addEventListener("click", async e => {
   else if (act === "snext"){ shiftSched(1); render(); }
   else if (act === "stoday"){ schedDate = new Date(); render(); }
   else if (act === "settings"){ openSettings(); }
+  else if (act === "saytoggle"){ const open = t.getAttribute("aria-expanded") !== "true"; t.setAttribute("aria-expanded", open); }
   else if (act === "connect"){ t.disabled = true; const v = (document.getElementById("ghToken") || {}).value || ""; const r = await connectGitHub(v); toast(r.ok ? "Connected. Your data is backed up." : r.why); render(); openSettings(); }
   else if (act === "disconnect"){ disconnectGitHub(); toast("Disconnected. Data stays on this phone."); openSettings(); }
   else if (act === "syncnow"){ await loadAll(); render(); toast(GH.state === "synced" ? "Synced." : "Couldn't sync."); openSettings(); }

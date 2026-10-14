@@ -1,7 +1,7 @@
 /* Swole service worker: offline shell + push reminders */
-const CACHE = "swole-v5";
+const CACHE = "swole-v6";
 const SHELL = [
-  "./", "index.html", "plan.js", "app.js", "manifest.webmanifest",
+  "./", "index.html", "plan.js?v=6", "app.js?v=6", "manifest.webmanifest",
   "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png",
   "media/swole.webp", "media/swole-bench.webp", "media/swole-ready.webp", "media/swole-recover.webp",
 ];
@@ -17,7 +17,7 @@ self.addEventListener("fetch", e => {
   if (url.pathname.endsWith(".mp4")) return;                                  // let Safari handle video range requests
   // network first, so updates land immediately; cache as fallback for offline
   e.respondWith(
-    fetch(e.request).then(res => {
+    fetch(e.request, {cache: "no-cache"}).then(res => {
       if (res.ok){ const copy = res.clone(); caches.open(CACHE).then(c => c.put(e.request, copy)); }
       return res;
     }).catch(() => caches.match(e.request).then(r => r || caches.match("index.html")))
