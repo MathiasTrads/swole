@@ -99,7 +99,7 @@ async function save(c, id, data){
   if (GH.token){ setSyncState("syncing"); flush(); }
 }
 window.addEventListener("online", () => flush());
-document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") loadAll().then(render); });
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") loadAll().then(() => { applyTheme(); render(); }); });
 
 async function connectGitHub(token){
   GH.token = token.trim();
@@ -191,12 +191,21 @@ function swoleSVG(mood){
 }
 
 /* ============ AVATAR (uploaded art) ============ */
-const BUILTIN = {src:"media/swole-default.mp4", poster:"media/swole.webp", type:"video/mp4"};
+const BUILTIN = {src:"media/cut-default.webp", type:"image/webp", cut:true};
 const BUILTIN_SLOT = {
-  klar:{src:"media/swole-ready.mp4", poster:"media/swole-ready.webp", type:"video/mp4", fill:true},
-  skru:{src:"media/swole-bench.mp4", poster:"media/swole-bench.webp", type:"video/mp4", fill:true},
-  rest:{src:"media/swole-recover.mp4", poster:"media/swole-recover.webp", type:"video/mp4", fill:true},
+  klar:{src:"media/cut-ready.webp", type:"image/webp", cut:true},
+  skru:{src:"media/cut-bench.webp", type:"image/webp", cut:true},
+  rest:{src:"media/cut-recover.webp", type:"image/webp", cut:true},
 };
+/* v11 character pack */
+const MOMENT = {
+  intro:{src:"media/m-intro.webp", ms:5100, word:"I'M SWOLE", sub:"Your coach for the next 26 weeks. Check in every morning. I'll handle the rest."},
+  kick:{src:"media/m-kick.webp", ms:5100, word:"LET'S GO", sub:""},
+  flex:{src:"media/m-flex.webp", ms:5100, word:"DONE", sub:"Logged. That's how you get swole."},
+  shadow:{src:"media/m-shadow.webp", ms:6100, word:"FINISHED", sub:"Intervals done. Log your max HR."},
+};
+const EMO = n => `media/emote/${n}.webp`;
+const POSE = n => `media/pose/${n}.webp`;
 function artFor(slot){
   const a = (S.settings.avatar) || {};
   if (a[slot] && a[slot].id) return a[slot];
@@ -206,6 +215,7 @@ function artFor(slot){
 const isCutout = art => !art.fill && !art.src && /png|webp|gif/.test(art.type || "");
 function mediaTag(art){
   const src = art.src || "/_blob/" + art.id;
+  if (art.cut) return `<img src="${src}" alt="Swole" decoding="async">`;
   return (art.type || "").startsWith("video/")
     ? `<video src="${src}" ${art.poster ? `poster="${art.poster}"` : ""} autoplay muted loop playsinline aria-label="Swole"></video>`
     : `<img src="${src}" alt="Swole">`;
@@ -288,24 +298,27 @@ function viewHome(){
   const wk = ph ? `Week ${w} · ${ph.name}` : w < 1 ? `Starts Oct 19 · ${daysBetween(d,START)} days` : "Plan complete";
   return `
   <section class="home2">
-    <div class="hero2 ${art ? "has-art" : "drawn"}" id="hero">
+    <div class="hero2" id="hero">
+      <svg class="bigword" viewBox="0 0 1000 400" preserveAspectRatio="xMidYMin meet" aria-hidden="true"><text x="0" y="372" textLength="1000" lengthAdjust="spacingAndGlyphs">SWOLE</text></svg>
       <button class="roundbtn floatgear" data-act="settings" aria-label="Settings">${ICON.gear}<span id="syncdot" data-state="${GH.state}"></span></button>
       <div class="fig">${art ? mediaTag(art) : swoleSVG(mood)}</div>
     </div>
-    <div class="sheet2">
-      <div class="meta2">
-        <span class="state2" style="--c:${r ? LEVEL[r.level].color : "var(--muted)"}">${esc(status)}</span>
-        <span class="stars" aria-label="Readiness ${stars} of 5">${[1,2,3,4,5].map(i => `<i class="${i <= stars ? "on" : ""}">★</i>`).join("")}</span>
-        <span class="wk2">${esc(wk)}</span>
+    <div class="cards2">
+      <div class="card2">
+        <div class="meta2">
+          <span class="state2" style="--c:${r ? LEVEL[r.level].color : "#8a7f7d"}">${esc(status)}</span>
+          <span class="stars" aria-label="Readiness ${stars} of 5">${[1,2,3,4,5].map(i => `<i class="${i <= stars ? "on" : ""}">★</i>`).join("")}</span>
+          <span class="wk2">${esc(wk)}</span>
+        </div>
+        <button class="say2" data-act="saytoggle" aria-expanded="false"><img class="emo" src="${EMO(r ? {g:"smile",y:"smug",r:"yawn"}[r.level] : "wink")}" alt=""> <span>${lines.map(esc).join(" ")}</span><i aria-hidden="true">›</i></button>
       </div>
-      <button class="say2" data-act="saytoggle" aria-expanded="false"><b>Swole</b> <span>${lines.map(esc).join(" ")}</span><i aria-hidden="true">›</i></button>
-      <div class="today2">
-        <div class="today2-h"><h2>Today</h2><span>Tomorrow · ${tItems.length ? tItems.map(it => esc(SESS[it.id].title.split(" · ")[0] === "Muay Thai" ? "Muay Thai" : SESS[it.id].title.split(" · ")[0])).join(" + ") : "Rest"}</span></div>
+      <div class="card2">
+        <div class="today2-h"><h2>Today</h2><span>Tomorrow · ${tItems.length ? tItems.map(it => esc(SESS[it.id].title.split(" · ")[0])).join(" + ") : "Rest"}</span></div>
         ${items.length ? items.map(it => { const s2 = SESS[it.id], k = key+"_"+it.slot;
-          return `<button class="r2 kind-${s2.kind}" data-open="${k}|${it.id}"><span class="t2">${esc(slotTime(it))}</span><span class="n2">${esc(s2.title)}</span>${statusChip(k) || `<span class="go2">›</span>`}</button>`; }).join("")
-          : `<div class="r2"><span class="t2">All day</span><span class="n2">Rest day · walk, eat, sleep</span><span></span></div>`}
+          return `<button class="r2 kind-${s2.kind}" data-open="${k}|${it.id}"><span class="t2">${esc(slotTime(it))}</span><span class="n2">${esc(s2.title)}<small>${esc(s2.dur)} · ${esc(s2.sub)}</small></span>${statusChip(k) || `<span class="go2">›</span>`}</button>`; }).join("")
+          : `<div class="r2"><span class="t2">All day</span><span class="n2">Rest day<small>Walk, eat, sleep 8 hours</small></span><span></span></div>`}
+        <button class="pill wide" data-act="checkin">${ci ? "Redo check-in" : "Start check-in"}</button>
       </div>
-      <button class="pill wide" data-act="checkin">${ci ? "Redo check-in" : "Start check-in"}</button>
     </div>
   </section>`;
 }
@@ -406,7 +419,7 @@ function viewPlan(){
   const cw = weekNo(new Date());
   return `
   <div class="top"><div class="brand">Plan<b>.</b></div><span class="eyebrow">Oct 19 → Apr 18</span></div>
-  <p style="color:var(--muted);margin:0 0 6px">26 weeks. Explosiveness first, then the gas tank. A deload every 4–6 weeks. Retests in weeks 12, 22 and 26.</p>
+  <div class="phero"><p>26 weeks. Explosiveness first, then the gas tank. A deload every 4–6 weeks. Retests in weeks 12, 22 and 26.</p><img src="${POSE("arms")}" alt=""></div>
   <div class="banner n">Phase 2 onwards is provisional. Swole adjusts exercises and loads to your test numbers before each phase starts.</div>
   ${PHASES.map(p => {
     const a = weekStart(p.w[0]), b = addDays(weekStart(p.w[1]), 6);
@@ -427,7 +440,7 @@ function viewPlan(){
 function viewTests(){
   return `
   <div class="top"><div class="brand">Tests<b>.</b></div><span class="eyebrow">Weeks 1 · 12 · 22 · 26</span></div>
-  <p style="color:var(--muted);margin:0 0 14px">Enter your numbers after each test. Swole uses them to build the next phases.</p>
+  <div class="phero"><p>Enter your numbers after each test. Swole uses them to build the next phases.</p><img src="${POSE("teep")}" alt=""></div>
   <div class="list">${TESTS.map(t => {
     const cur = S.tests[t.id], last = cur && cur.history && cur.history.length ? cur.history[cur.history.length-1] : null;
     const extra = last && t.calc ? t.calc(last.v) : "";
@@ -459,7 +472,12 @@ async function openSettings(){
   const stateText = {local: "Saved on this phone only", syncing: "Syncing…", synced: "Synced", error: "Couldn't sync. Will retry."}[GH.state];
   openSheet(`
     <div class="close"><span class="eyebrow">Settings</span><button data-act="close">Close ✕</button></div>
-    <h1 class="sh-title">Swole setup</h1>
+    <div class="phero set"><h1 class="sh-title">Swole setup</h1><img src="${POSE("bench")}" alt=""></div>
+
+    <div class="block">
+      <h3>Look<small>${theme() === "red" ? "Red" : "White"}</small></h3>
+      <div class="opts" style="margin:8px 0 12px"><button class="opt" data-theme="white" aria-pressed="${theme() !== "red"}">White</button><button class="opt" data-theme="red" aria-pressed="${theme() === "red"}">Red</button><button class="opt" data-act="replayintro">Replay intro</button></div>
+    </div>
 
     <div class="block">
       <h3>Your data<small>${esc(stateText)}</small></h3>
@@ -484,7 +502,7 @@ async function openSettings(){
     </div>
 
     <div class="block">
-      <h3>App<small>v2 · PWA</small></h3>
+      <h3>App<small>v11 · PWA</small></h3>
       <p class="verdict-l" style="text-align:left;max-width:none;margin:6px 0 12px">${isStandalone() ? "Running from your Home Screen." : "Tip: Share → Add to Home Screen for full-screen and reminders."}</p>
     </div>`);
 }
@@ -545,7 +563,7 @@ function tick(){
   let left = Math.ceil((T.end - Date.now())/1000);
   if (left <= 0){
     T.i++;
-    if (T.i >= T.seq.length){ beep(660,.6); stopTimer(true); const b = document.getElementById("tBig"); if (b){ b.textContent = "DONE"; document.getElementById("tLab").textContent = "Log your max HR"; } return; }
+    if (T.i >= T.seq.length){ beep(660,.6); stopTimer(true); const b = document.getElementById("tBig"); if (b){ b.textContent = "DONE"; document.getElementById("tLab").textContent = "Log your max HR"; } playMoment("shadow"); return; }
     T.end = Date.now() + T.seq[T.i].t*1000; left = T.seq[T.i].t; beep(T.seq[T.i].kind === "work" ? 1046 : 520, .35);
   } else if (left <= 3 && left !== T.lastSec){ beep(440,.08); }
   T.lastSec = left;
@@ -625,12 +643,16 @@ async function saveCI(){
     await save("tests", "weight", {name:"Body weight", history:[...(cur.history||[]).filter(h => h.date !== a.date), {date:a.date, v:{v:a.weight}}]});
   }
   const L = LEVEL[r.level], art = artFor(L.slot);
+  const emo = r.knee && r.level !== "r" ? "surprised" : {g:"hyped", y:"serious", r:"exhausted"}[r.level];
   document.getElementById("sheetIn").innerHTML = `
     <div class="close"><span class="eyebrow">Today's verdict</span><button data-act="close">Close ✕</button></div>
-    <section class="stage ${art ? (isCutout(art) ? "cut" : "fill") : "drawn"}"><div class="fig">${art ? mediaTag(art) : swoleSVG(L.mood)}</div>
-      <div class="panel"><span class="handle"></span><h1 class="name" style="color:${L.color}">${esc(L.word)}</h1>
-      <p class="verdict-l">${esc(L.line)}</p>${r.knee ? `<p class="verdict-l">The knee says no. No jumps today.</p>` : ""}<p class="verdict-l">${esc(foodLine(r.food))}</p>
-      <button class="pill" data-act="close">To today's sessions</button></div></section>`;
+    <section class="verdict3">
+      <div class="vfig"><svg class="vword" viewBox="0 0 1000 300" aria-hidden="true"><text x="500" y="270" text-anchor="middle" textLength="${Math.min(1000, L.word.length*150)}" lengthAdjust="spacingAndGlyphs">${esc(L.word.toUpperCase())}</text></svg>${mediaTag(art)}</div>
+      <div class="vcard"><div class="vhead"><img class="emo lg" src="${EMO(emo)}" alt=""><div><b style="color:${L.color}">${esc(L.word)}</b><span>Readiness ${Math.round(r.score*10)/10} / 8</span></div></div>
+      <p>${esc(L.line)}</p>${r.knee ? `<p>The knee says no. No jumps today.</p>` : ""}<p>${esc(foodLine(r.food))}</p>
+      <button class="pill wide" data-act="close">To today's sessions</button></div>
+    </section>`;
+  if (r.level !== "r") playMoment("kick", {word: r.level === "g" ? "LET'S GO" : "EASY NOW", sub: L.line});
   CI = null;
 }
 
@@ -649,6 +671,8 @@ document.addEventListener("click", async e => {
   else if (act === "syncnow"){ await loadAll(); render(); toast(GH.state === "synced" ? "Synced." : "Couldn't sync."); openSettings(); }
   else if (act === "pushon"){ t.disabled = true; await enablePush(); openSettings(); }
   else if (act === "checkin"){ startCheckin(); }
+  else if (act === "replayintro"){ document.getElementById("sheet").hidden = true; render(); playMoment("intro"); }
+  else if (t.dataset.theme){ setTheme(t.dataset.theme); openSettings(); }
   else if (act === "close"){ CI = null; closeSheet(); }
   else if (act === "tstart"){ startTimer(t.dataset.sid); }
   else if (act === "tstop"){ stopTimer(false); }
@@ -659,7 +683,8 @@ document.addEventListener("click", async e => {
     const st = document.querySelector("#logStatus [aria-pressed=true]"), rp = document.querySelector("#logRpe [aria-pressed=true]");
     if (!st){ toast("Pick Done, Partly or Skipped."); return; }
     await save("sessions", t.dataset.key, {session:t.dataset.id, status:st.dataset.status, rpe: rp ? Number(rp.dataset.rpe) : null, note: document.getElementById("logNote").value.trim(), at:new Date().toISOString()});
-    toast("Logged. Good work."); closeSheet();
+    closeSheet();
+    if (st.dataset.status === "done") playMoment("flex"); else toast("Logged. Good work.");
   }
   else if (t.dataset.mode){ schedMode = t.dataset.mode; render(); }
   else if (t.dataset.goday){ schedDate = parse(t.dataset.goday); schedMode = "day"; render(); window.scrollTo(0,0); }
@@ -672,7 +697,42 @@ document.addEventListener("click", async e => {
   else if (t.dataset.cisess){ const [k,v,id] = t.dataset.cisess.split("|"); CI.a.sessions[k] = {session:id, status:v, via:"checkin", at:new Date().toISOString()}; renderCI(); }
 });
 
+/* ============ THEME ============ */
+function theme(){ return (S.settings.look && S.settings.look.theme) || LS.get("swole:theme", "white"); }
+function applyTheme(){ const t = theme(); document.documentElement.dataset.theme = t; const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = t === "red" ? "#FF3B2F" : "#FFFFFF"; }
+async function setTheme(t){ LS.set("swole:theme", t); applyTheme(); await save("settings", "look", {theme:t}); }
+
+/* ============ MOMENTS ============ */
+const momentBlobs = {};
+async function momentURL(src){
+  try {
+    if (!momentBlobs[src]) momentBlobs[src] = await (await fetch(src)).blob();
+    return URL.createObjectURL(momentBlobs[src]);   // fresh URL = animation starts from frame 1
+  } catch(e){ return src; }
+}
+function preloadMoments(){ Object.values(MOMENT).forEach(m => { if (!momentBlobs[m.src]) fetch(m.src).then(r => r.ok && r.blob()).then(b => { if (b) momentBlobs[m.src] = b; }).catch(() => {}); }); }
+let momentT = null;
+async function playMoment(name, over = {}){
+  const m = {...MOMENT[name], ...over}; if (!m.src) return;
+  const url = await momentURL(m.src);
+  let el = document.getElementById("moment");
+  if (!el){ el = document.createElement("div"); el.id = "moment"; document.body.appendChild(el); el.addEventListener("click", closeMoment); }
+  el.innerHTML = `<svg class="mword" viewBox="0 0 1000 400" aria-hidden="true"><text x="500" y="372" text-anchor="middle" textLength="${Math.min(1000, Math.max(3, m.word.length)*130)}" lengthAdjust="spacingAndGlyphs">${esc(m.word)}</text></svg>
+    <img class="mfig" src="${url}" alt="">
+    ${m.sub ? `<p class="msub">${esc(m.sub)}</p>` : ""}<span class="mtap">Tap to continue</span>`;
+  el.hidden = false; el.classList.remove("out"); void el.offsetWidth; el.classList.add("in");
+  clearTimeout(momentT); momentT = setTimeout(closeMoment, m.ms);
+}
+function closeMoment(){
+  clearTimeout(momentT); const el = document.getElementById("moment"); if (!el || el.hidden) return;
+  el.classList.remove("in"); el.classList.add("out");
+  setTimeout(() => { el.hidden = true; const img = el.querySelector(".mfig"); if (img && img.src.startsWith("blob:")) URL.revokeObjectURL(img.src); el.innerHTML = ""; }, 260);
+}
+
 /* ============ BOOT ============ */
+applyTheme();
 render();
+if (!LS.get("swole:introSeen", false)){ LS.set("swole:introSeen", true); playMoment("intro"); }
+setTimeout(preloadMoments, 2500);
 if ("serviceWorker" in navigator){ navigator.serviceWorker.register("sw.js").catch(() => {}); }
 loadAll().then(render);

@@ -1,9 +1,9 @@
 /* Swole service worker: offline shell + push reminders */
-const CACHE = "swole-v9";
+const CACHE = "swole-v11";
 const SHELL = [
-  "./", "index.html", "plan.js?v=9", "app.js?v=9", "manifest.webmanifest",
+  "./", "index.html", "plan.js?v=11", "app.js?v=11", "manifest.webmanifest",
   "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png",
-  "media/swole.webp", "media/swole-bench.webp", "media/swole-ready.webp", "media/swole-recover.webp",
+  "fonts/Karantina-Bold.ttf?v=11", "media/cut-default.webp", "media/cut-ready.webp", "media/cut-bench.webp", "media/cut-recover.webp",
 ];
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
