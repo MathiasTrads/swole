@@ -67,7 +67,7 @@ async function loadAll(){
       }
     }
     await flush();
-    setSyncState("synced");
+    setSyncState(COLS.some(c => GH.dirty[c]) ? "error" : "synced");
   } catch(e){ setSyncState("error"); }
 }
 let flushing = null;
@@ -83,8 +83,10 @@ async function flush(){
       } catch(e){ setSyncState("error"); flushing = null; return; }
     }
     GH.lastSync = new Date().toISOString(); LS.set("swole:lastSync", GH.lastSync);
-    setSyncState("synced");
     flushing = null;
+    // something may have been saved while this flush was running: go again
+    if (COLS.some(c => GH.dirty[c])) return flush();
+    setSyncState("synced");
   })();
   return flushing;
 }
