@@ -1,0 +1,15 @@
+{
+  "name": "Swole",
+  "short_name": "Swole",
+  "description": "Your Muay Thai coach: daily check-in, today's sessions, 26-week plan and tests.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1B1718",
+  "theme_color": "#1B1718",
+  "icons": [
+    {"src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+  ]
+}

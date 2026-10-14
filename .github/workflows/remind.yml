@@ -1,0 +1,29 @@
+name: Morning reminder
+on:
+  schedule:
+    - cron: "5 4 * * *"   # 06:05 Copenhagen in summer time (CEST)
+    - cron: "5 5 * * *"   # 06:05 Copenhagen in winter time (CET)
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Send now, whatever the time"
+        type: boolean
+        default: true
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --no-save web-push@3.6.7
+      - run: node scripts/remind.mjs
+        env:
+          TZ: Europe/Copenhagen
+          DATA_TOKEN: ${{ secrets.DATA_TOKEN }}
+          VAPID_PUBLIC: ${{ secrets.VAPID_PUBLIC }}
+          VAPID_PRIVATE: ${{ secrets.VAPID_PRIVATE }}
+          DATA_REPO: ${{ github.repository_owner }}/swole-data
+          FORCE: ${{ github.event_name == 'workflow_dispatch' && inputs.force && '1' || '' }}
