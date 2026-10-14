@@ -15,6 +15,7 @@ const GH = {
   dirty: LS.get("swole:dirty", {}),
   state: "local",      // local | syncing | synced | error
   lastSync: LS.get("swole:lastSync", null),
+  lastError: LS.get("swole:lastError", ""),
 };
 COLS.forEach(c => { S[c] = LS.get("swole:data:" + c, {}); });
 
@@ -26,7 +27,7 @@ async function gh(path, opts = {}){
     cache: "no-store", ...opts,
     headers: {Accept: "application/vnd.github+json", Authorization: "Bearer " + GH.token, "X-GitHub-Api-Version": "2022-11-28", ...(opts.headers || {})},
   });
-  if (!r.ok && r.status !== 404){ const e = new Error("GitHub " + r.status); e.status = r.status; throw e; }
+  if (!r.ok && r.status !== 404){ let m = ""; try { m = (await r.clone().json()).message || ""; } catch(_){} const e = new Error("GitHub " + r.status + (m ? " (" + m + ")" : "")); e.status = r.status; throw e; }
   return r;
 }
 async function ghGet(file){
@@ -68,7 +69,7 @@ async function loadAll(){
     }
     await flush();
     setSyncState(COLS.some(c => GH.dirty[c]) ? "error" : "synced");
-  } catch(e){ setSyncState("error"); }
+  } catch(e){ GH.lastError = (e && e.message || "error") + " while loading"; LS.set("swole:lastError", GH.lastError); setSyncState("error"); }
 }
 let flushing = null;
 async function flush(){
@@ -80,9 +81,10 @@ async function flush(){
       try {
         await ghPut(`data/${c}.json`, S[c], `${c}: update from app`);
         GH.dirty[c] = false; LS.set("swole:dirty", GH.dirty);
-      } catch(e){ setSyncState("error"); flushing = null; return; }
+      } catch(e){ GH.lastError = (e && e.message || "error") + " while saving " + c; LS.set("swole:lastError", GH.lastError); setSyncState("error"); flushing = null; return; }
     }
     GH.lastSync = new Date().toISOString(); LS.set("swole:lastSync", GH.lastSync);
+    GH.lastError = ""; LS.set("swole:lastError", "");
     flushing = null;
     // something may have been saved while this flush was running: go again
     if (COLS.some(c => GH.dirty[c])) return flush();
@@ -280,34 +282,31 @@ function viewHome(){
   }
   const art = artFor(slot);
   const stars = r ? Math.max(1, Math.min(5, Math.round(r.score/8*5))) : 0;
-  const next = items.find(it => !S.sessions[key+"_"+it.slot]);
   const tm = addDays(d,1), tItems = plannedFor(tm);
   const status = r ? LEVEL[r.level].word : "Not checked in";
+  const wk = ph ? `Week ${w} · ${ph.name}` : w < 1 ? `Starts Oct 19 · ${daysBetween(d,START)} days` : "Plan complete";
   return `
-  <section class="stage bleed ${art ? (isCutout(art) ? "cut" : "fill") : "drawn"}" id="hero">
-    <button class="roundbtn floatgear" data-act="settings" aria-label="Settings">${ICON.gear}<span id="syncdot" data-state="${GH.state}"></span></button>
-    <div class="fig">${art ? mediaTag(art) : swoleSVG(mood)}</div>
-    <div class="panel">
-      <span class="handle"></span>
-      <h1 class="name">Swole</h1>
-      <div class="stars" aria-label="Readiness ${stars} of 5">${[1,2,3,4,5].map(i => `<i class="${i <= stars ? "on" : ""}">★</i>`).join("")}</div>
-      <dl class="stats">
-        <div><dt>Week</dt><dd>${ph ? w+" / 26" : w < 1 ? "Starts Oct 19" : "Done"}</dd></div>
-        <div><dt>Phase</dt><dd>${ph ? esc(ph.name) : w < 1 ? daysBetween(d,START)+" days to go" : "—"}</dd></div>
-        <div><dt>Status</dt><dd style="color:${r ? LEVEL[r.level].color : "var(--muted)"}">${esc(status)}</dd></div>
-        <div><dt>Up next</dt><dd>${next ? esc(slotTime(next)+" · "+SESS[next.id].title.split(" · ")[0]) : "Rest"}</dd></div>
-      </dl>
-      <button class="pill" data-act="checkin">${ci ? "Redo check-in" : "Start check-in"}</button>
+  <section class="home2">
+    <div class="hero2 ${art ? "has-art" : "drawn"}" id="hero">
+      <button class="roundbtn floatgear" data-act="settings" aria-label="Settings">${ICON.gear}<span id="syncdot" data-state="${GH.state}"></span></button>
+      <div class="fig">${art ? mediaTag(art) : swoleSVG(mood)}</div>
     </div>
-  </section>
-
-  <div class="glass say"><span class="who">${ICON.chat} Swole says</span>${lines.map(l => `<p>${esc(l)}</p>`).join("")}</div>
-
-  <div class="sec-h"><h2>Today</h2><span class="eyebrow">${items.length} session${items.length === 1 ? "" : "s"}</span></div>
-  <div class="list">
-    ${items.length ? items.map(it => sessCard(d,it)).join("") : `<div class="glass empty">Rest day. Walk, eat well, sleep 8 hours.</div>`}
-  </div>
-  <p class="tomorrow">Tomorrow · <b>${tItems.length ? tItems.map(it => esc(SESS[it.id].title)).join(" + ") : "Rest"}</b></p>`;
+    <div class="sheet2">
+      <div class="meta2">
+        <span class="state2" style="--c:${r ? LEVEL[r.level].color : "var(--muted)"}">${esc(status)}</span>
+        <span class="stars" aria-label="Readiness ${stars} of 5">${[1,2,3,4,5].map(i => `<i class="${i <= stars ? "on" : ""}">★</i>`).join("")}</span>
+        <span class="wk2">${esc(wk)}</span>
+      </div>
+      <p class="say2"><b>Swole</b> ${lines.map(esc).join(" ")}</p>
+      <div class="today2">
+        <div class="today2-h"><h2>Today</h2><span>Tomorrow · ${tItems.length ? tItems.map(it => esc(SESS[it.id].title.split(" · ")[0] === "Muay Thai" ? "Muay Thai" : SESS[it.id].title.split(" · ")[0])).join(" + ") : "Rest"}</span></div>
+        ${items.length ? items.map(it => { const s2 = SESS[it.id], k = key+"_"+it.slot;
+          return `<button class="r2 kind-${s2.kind}" data-open="${k}|${it.id}"><span class="t2">${esc(slotTime(it))}</span><span class="n2">${esc(s2.title)}<small>${esc(s2.dur)} · ${esc(s2.sub)}</small></span>${statusChip(k) || `<span class="go2">›</span>`}</button>`; }).join("")
+          : `<div class="r2"><span class="t2">All day</span><span class="n2">Rest day<small>Walk, eat well, sleep 8 hours.</small></span><span></span></div>`}
+      </div>
+      <button class="pill wide" data-act="checkin">${ci ? "Redo check-in" : "Start check-in"}</button>
+    </div>
+  </section>`;
 }
 function bindTilt(){
   const h = document.getElementById("hero"); if (!h) return;
@@ -465,6 +464,7 @@ async function openSettings(){
       <h3>Your data<small>${esc(stateText)}</small></h3>
       ${connected ? `
         <p class="verdict-l" style="text-align:left;max-width:none;margin:6px 0">Check-ins, logs and tests are saved to your private repo <b>${esc(GH.owner)}/swole-data</b>. Swole reads them there to adjust your plan.${last ? ` Last sync ${last.toLocaleString("en-GB",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}.` : ""}</p>
+        ${GH.lastError || COLS.some(c => GH.dirty[c]) ? `<div class="banner r" style="margin:8px 0">Not uploaded yet: ${esc(COLS.filter(c => GH.dirty[c]).join(", ") || "nothing")}.${GH.lastError ? ` Last error: ${esc(GH.lastError)}.` : ""}</div>` : ""}
         <div class="opts" style="margin:10px 0 12px"><button class="btn" data-act="syncnow">Sync now</button><button class="btn ghost" data-act="disconnect">Disconnect</button></div>`
       : `
         <p class="verdict-l" style="text-align:left;max-width:none;margin:6px 0 10px">Paste your GitHub token to back up your data and let Swole read it. Without it, everything stays on this phone.</p>
