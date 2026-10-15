@@ -551,7 +551,7 @@ async function openSettings(){
     </div>
 
     <div class="block">
-      <h3>App<small>v13 · PWA</small></h3>
+      <h3>App<small>v14 · PWA</small></h3>
       <p class="verdict-l" style="text-align:left;max-width:none;margin:6px 0 12px">${isStandalone() ? "Running from your Home Screen." : "Tip: Share → Add to Home Screen for full-screen and reminders."}</p>
     </div>`);
 }
