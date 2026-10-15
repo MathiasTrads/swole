@@ -252,6 +252,7 @@ const ICON = {
 /* ============ UI STATE ============ */
 let tab = "dag";
 let homeMode = "today";
+let lockerCat = "fightwear";
 let schedMode = "week";
 let schedDate = new Date();
 
@@ -302,7 +303,7 @@ function viewHome(){
   return `
   <section class="home3">
     <svg class="bigword" viewBox="0 0 1000 500" aria-hidden="true"><text x="0" y="492" textLength="1000" lengthAdjust="spacingAndGlyphs">SWOLE</text></svg>
-    <div class="h3fig">${art ? mediaTag(art) : swoleSVG(mood)}</div>
+    <div class="h3fig">${outfitLook() ? `<img src="${outfitLook()}" alt="Swole">` : art ? mediaTag(art) : swoleSVG(mood)}</div>
     <p class="h3say"><b>Report says:</b> ${lines.map(esc).join(" ")}</p>
     ${topBar(false, nu)}
     <div class="card2 h3today">
@@ -321,8 +322,8 @@ function topBar(inLocker, nu){
 /* ---------- LOCKER ---------- */
 function viewLocker(){
   const st = lockerStats(), eq = equipped(), seen = LS.get("swole:lockerSeen", []);
-  const tiles = ITEMS.map(it => {
-    const s = itemState(it, st), R = RARITY[it.rarity], on = eq[it.slot] === it.id, isNew = s.open && it.unlock.type !== "start" && !seen.includes(it.id);
+  const tiles = ITEMS.filter(it => it.cat === lockerCat).map(it => {
+    const s = itemState(it, st), R = RARITY[it.rarity], on = it.slot === "outfit" ? eq.outfit === it.id : (eq[it.slot] === it.id && !eq.outfit), isNew = s.open && it.unlock.type !== "start" && !seen.includes(it.id);
     return `<button class="ltile ${s.open ? "" : "locked"} ${on ? "on" : ""}" style="--rc:${R.c}" data-item="${it.id}" aria-label="${esc(it.name)}${s.open ? "" : " (locked)"}">
       ${it.img ? `<img src="${it.img}" alt="" loading="lazy">` : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">${SLOT_ICON[it.slot] || SLOT_ICON.extra}</svg>`}
       ${s.open ? "" : `<span class="lk"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span><span class="prog"><i style="width:${Math.round(s.have/s.need*100)}%"></i></span>`}
@@ -334,13 +335,15 @@ function viewLocker(){
   <section class="locker">
     ${topBar(true, 0)}
     <div class="lhead"><span>${owned}/${ITEMS.length} unlocked</span></div>
+    <div class="lcats">${CATS.map(c => `<button class="lcat" data-lcat="${c[0]}" aria-pressed="${lockerCat === c[0]}">${c[1]}</button>`).join("")}</div>
     <div class="lgrid">${tiles}</div>
-    <div class="lfig">${mediaTag(BUILTIN)}</div>
+    <div class="lfig">${outfitLook() ? `<img src="${outfitLook()}" alt="Swole">` : mediaTag(BUILTIN)}</div>
   </section>`;
 }
 function openItem(id){
   const it = ITEMS.find(i => i.id === id); if (!it) return;
-  const st = lockerStats(), s = itemState(it, st), R = RARITY[it.rarity], on = equipped()[it.slot] === it.id;
+  const st = lockerStats(), s = itemState(it, st), R = RARITY[it.rarity], eqd = equipped();
+  const on = it.slot === "outfit" ? eqd.outfit === it.id : (eqd[it.slot] === it.id && !eqd.outfit);
   const seen = LS.get("swole:lockerSeen", []); if (s.open && !seen.includes(id)){ LS.set("swole:lockerSeen", [...seen, id]); }
   openSheet(`
     <div class="close"><span class="eyebrow">Locker · ${esc(SLOTS[it.slot] || it.slot)}</span><button data-act="close">Close ✕</button></div>
@@ -350,13 +353,20 @@ function openItem(id){
       <h1 class="sh-title">${esc(it.name)}</h1>
       <p>${esc(it.desc || "")}</p>
       ${it.unlock.type === "start" ? "" : `<div class="ireq"><div><b>${esc(UNLOCK_TEXT[it.unlock.type](it.unlock.n))}</b><span>${s.have} / ${s.need}</span></div><span class="prog big"><i style="width:${Math.round(s.have/s.need*100)}%"></i></span></div>`}
-      ${s.open ? `<button class="pill wide" data-equip="${it.id}" ${on ? "disabled" : ""}>${on ? "Equipped" : "Equip"}</button>` : `<button class="pill wide" disabled>Locked</button>`}
-      ${s.open && !it.look ? `<p class="inote">Swole's figure gets this look once the render is made.</p>` : ""}
+      ${!s.open ? `<button class="pill wide" disabled>Locked</button>`
+        : it.slot === "outfit" && on ? `<button class="pill wide" data-unequip="outfit">Back to fight kit</button>`
+        : `<button class="pill wide" data-equip="${it.id}" ${on ? "disabled" : ""}>${on ? "Equipped" : "Equip"}</button>`}
+      ${s.open && !it.look ? `<p class="inote">${it.slot === "outfit" ? "Swole wears this outfit as soon as its render is in." : "Swole's figure shows this item once its render is made."}</p>` : ""}
     </div>`);
+}
+async function unequipOutfit(){
+  const L = {...lockerData()}; L.equipped = {...equipped()}; const was = L.equipped.outfit; delete L.equipped.outfit;
+  await save("settings", "locker", L); toast("Fight kit back on."); if (was) openItem(was);
 }
 async function equipItem(id){
   const it = ITEMS.find(i => i.id === id); if (!it) return;
   const L = {...lockerData()}; L.equipped = {...equipped(), [it.slot]: id};
+  if (it.slot !== "outfit") delete L.equipped.outfit;   // picking fight gear puts the fight kit back on
   await save("settings", "locker", L);
   toast(`${it.name} equipped.`);
   openItem(id);
@@ -541,7 +551,7 @@ async function openSettings(){
     </div>
 
     <div class="block">
-      <h3>App<small>v12 · PWA</small></h3>
+      <h3>App<small>v13 · PWA</small></h3>
       <p class="verdict-l" style="text-align:left;max-width:none;margin:6px 0 12px">${isStandalone() ? "Running from your Home Screen." : "Tip: Share → Add to Home Screen for full-screen and reminders."}</p>
     </div>`);
 }
@@ -732,6 +742,8 @@ document.addEventListener("click", async e => {
   else if (t.dataset.open){ const [k,id] = t.dataset.open.split("|"); openSession(k,id); }
   else if (t.dataset.item){ openItem(t.dataset.item); }
   else if (t.dataset.equip){ equipItem(t.dataset.equip); }
+  else if (t.dataset.unequip){ unequipOutfit(); }
+  else if (t.dataset.lcat){ lockerCat = t.dataset.lcat; render(); }
   else if (t.dataset.savetest){ saveTest(t.dataset.savetest); }
   else if (t.dataset.status){ document.querySelectorAll("#logStatus .opt").forEach(b => b.setAttribute("aria-pressed", b === t)); }
   else if (t.dataset.rpe){ document.querySelectorAll("#logRpe button").forEach(b => b.setAttribute("aria-pressed", b === t)); }

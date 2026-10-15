@@ -9,26 +9,49 @@ const RARITY = {
   legendary: {label: "Legendary", c: "#FFB020"},
 };
 const SLOTS = {
-  top: "Top", hoodie: "Hoodie", shorts: "Shorts", wraps: "Hand wraps", gloves: "Gloves",
-  shins: "Shin guards", shoes: "Shoes", head: "Headwear", arms: "Arm bands", extra: "Extra",
+  top: "Top", shorts: "Shorts", wraps: "Hand wraps", gloves: "Gloves", shins: "Shin guards",
+  head: "Headgear", mouth: "Mouthguard", outfit: "Outfit",
 };
+const CATS = [["fightwear", "Fightwear"], ["leisure", "Leisure"], ["casual", "Casual"]];
+const I = (id, cat, slot, name, rarity, unlock, desc) => ({id, cat, slot, name, rarity, unlock, desc,
+  img: slot === "outfit" ? null : `media/items/${id}.webp`});
 const ITEMS = [
-  {id: "rash-black",    slot: "top",    name: "Black rashguard",      rarity: "common",    img: "media/items/rash-black.webp",    unlock: {type: "start"},           desc: "The everyday uniform. Tight, black, no nonsense."},
-  {id: "shorts-yokkao", slot: "shorts", name: "YOKKAO camo shorts",   rarity: "rare",      img: "media/items/shorts-yokkao.webp", unlock: {type: "start"},           desc: "Dark purple camo. Classic Thai cut."},
-  {id: "wraps-lime",    slot: "wraps",  name: "Lime wraps",           rarity: "common",    img: "media/items/wraps-lime.webp",    unlock: {type: "start"},           desc: "4.5 m, wrapped tight. Swole's signature colour."},
-  {id: "shins-fairtex", slot: "shins",  name: "Fairtex shin guards",  rarity: "rare",      img: "media/items/shins-fairtex.webp", unlock: {type: "start"},           desc: "Black leather. For the hard sparring days."},
-  {id: "tank-gym",      slot: "top",    name: "Gym tank",             rarity: "common",    unlock: {type: "sessions", n: 3},   desc: "For the morning sessions."},
-  {id: "slides",        slot: "shoes",  name: "Recovery slides",      rarity: "common",    unlock: {type: "checkins", n: 5},   desc: "Off the mat, into the slides."},
-  {id: "towel",         slot: "extra",  name: "Corner towel",         rarity: "common",    unlock: {type: "week", n: 6},       desc: "Reach your first deload week."},
-  {id: "hoodie-camp",   slot: "hoodie", name: "Fight-camp hoodie",    rarity: "rare",      unlock: {type: "streak", n: 7},     desc: "Seven mornings in a row. Earned, not bought."},
-  {id: "gloves-16",     slot: "gloves", name: "16 oz sparring gloves", rarity: "rare",     unlock: {type: "sessions", n: 10},  desc: "Ten sessions logged as done."},
-  {id: "wraps-red",     slot: "wraps",  name: "Red wraps",            rarity: "rare",      unlock: {type: "tests", n: 4},      desc: "Log four tests in the test week."},
-  {id: "runners",       slot: "shoes",  name: "Roadwork runners",     rarity: "rare",      unlock: {type: "checkins", n: 21},  desc: "Three weeks of check-ins."},
-  {id: "prajied",       slot: "arms",   name: "Prajied arm bands",    rarity: "epic",      unlock: {type: "sessions", n: 20},  desc: "Twenty sessions done. You're one of the camp now."},
-  {id: "shorts-fight",  slot: "shorts", name: "Fight-night shorts",   rarity: "epic",      unlock: {type: "sessions", n: 40},  desc: "Satin, loud, made for walkouts."},
-  {id: "mongkol",       slot: "head",   name: "Mongkol",              rarity: "legendary", unlock: {type: "week", n: 26},      desc: "Finish all 26 weeks."},
-  {id: "belt",          slot: "extra",  name: "Swole title belt",     rarity: "legendary", unlock: {type: "checkins", n: 150}, desc: "150 check-ins. The real champions show up."},
+  // fightwear: starter kit
+  I("rash-black",      "fightwear", "top",    "Black rashguard",         "common",    {type: "start"}, "The everyday uniform. Tight, black, no nonsense."),
+  I("shorts-yokkao",   "fightwear", "shorts", "YOKKAO camo shorts",      "rare",      {type: "start"}, "Dark purple camo. Classic Thai cut."),
+  I("wraps-lime",      "fightwear", "wraps",  "Lime wraps",              "common",    {type: "start"}, "4.5 m, wrapped tight. Swole's signature colour."),
+  I("shins-fairtex",   "fightwear", "shins",  "Fairtex shin guards",     "rare",      {type: "start"}, "Black leather. For the hard sparring days."),
+  // fightwear: earned
+  I("head-black",      "fightwear", "head",   "Black headgear",          "common",    {type: "checkins", n: 3},  "Full-face protection for sparring rounds."),
+  I("wraps-bear",      "fightwear", "wraps",  "Bear wraps",              "common",    {type: "sessions", n: 3},  "Cute on the outside. Still hits hard."),
+  I("mouth-gator",     "fightwear", "mouth",  "Gator mouthguard",        "rare",      {type: "checkins", n: 10}, "Bite down. Show teeth."),
+  I("wraps-dragon",    "fightwear", "wraps",  "Dragon wraps",            "rare",      {type: "streak", n: 5},    "Five mornings in a row."),
+  I("wraps-skull",     "fightwear", "wraps",  "Skull quick-wraps",       "rare",      {type: "sessions", n: 10}, "Neon gel wraps for fast pad rounds."),
+  I("shorts-leaf",     "fightwear", "shorts", "White leaf shorts",       "rare",      {type: "tests", n: 4},     "Finish the test week."),
+  I("gloves-eyeball",  "fightwear", "gloves", "Eyeball gloves",          "epic",      {type: "sessions", n: 20}, "They see everything coming."),
+  I("gloves-tokidoki", "fightwear", "gloves", "Tokidoki gloves",         "epic",      {type: "streak", n: 14},   "Two weeks of mornings without a miss."),
+  I("shorts-elsol",    "fightwear", "shorts", "El Sol shorts",           "epic",      {type: "week", n: 6},      "Reach your first deload week."),
+  I("shorts-fist",     "fightwear", "shorts", "Fist satin shorts",       "epic",      {type: "sessions", n: 35}, "Silver satin. Earned the hard way."),
+  I("gloves-holo",     "fightwear", "gloves", "Holo gloves",             "epic",      {type: "week", n: 12},     "Make it to the week 12 retest."),
+  I("gloves-barong",   "fightwear", "gloves", "Barong gloves",           "legendary", {type: "sessions", n: 60}, "Sixty sessions. A guardian on each fist."),
+  I("head-gladiator",  "fightwear", "head",   "Gladiator headgear",      "legendary", {type: "streak", n: 30},   "Thirty mornings straight. Enter the arena."),
+  I("shorts-tassel",   "fightwear", "shorts", "Fight-night tassel shorts","legendary",{type: "week", n: 26},     "Finish all 26 weeks. Walk out like a champion."),
+  // leisure (full outfits)
+  I("l-black",         "leisure",   "outfit", "All-black lounge set",    "common",    {type: "start"},           "Oversized crew, long shorts, iced coffee."),
+  I("l-brown",         "leisure",   "outfit", "Mocha hoodie set",        "rare",      {type: "sessions", n: 8},  "Hood up, recovery mode."),
+  I("l-charcoal",      "leisure",   "outfit", "Charcoal fleece set",     "epic",      {type: "streak", n: 21},   "Three weeks of mornings. Cozy is earned."),
+  // casual (full outfits)
+  I("c-blacktee",      "casual",    "outfit", "Black tee & pleats",      "common",    {type: "start"},           "Clean, black, effortless."),
+  I("c-jorts",         "casual",    "outfit", "Cream crew & jorts",      "common",    {type: "checkins", n: 7},  "One week of check-ins."),
+  I("c-knit",          "casual",    "outfit", "Pattern knit & clogs",    "rare",      {type: "checkins", n: 14}, "Two weeks of check-ins."),
+  I("c-retro",         "casual",    "outfit", "Retro neckerchief",       "rare",      {type: "streak", n: 7},    "Seven days in a row. Very dapper."),
+  I("c-fleece",        "casual",    "outfit", "Sherpa & cargos",         "rare",      {type: "sessions", n: 15}, "Fifteen sessions done."),
+  I("c-jersey",        "casual",    "outfit", "Jersey 46",               "epic",      {type: "checkins", n: 45}, "45 check-ins. Earth tones only."),
+  I("c-racing",        "casual",    "outfit", "Candy racing jacket",     "legendary", {type: "checkins", n: 100},"100 check-ins. Loud and proud."),
 ];
+/* outfit renders: filled in when the Magnific renders land (media/outfits/<id>.webp + -thumb.webp) */
+const OUTFIT_READY = [];
+ITEMS.forEach(it => { if (it.slot === "outfit" && OUTFIT_READY.includes(it.id)){ it.img = `media/outfits/${it.id}-thumb.webp`; it.look = `media/outfits/${it.id}.webp`; } });
 const UNLOCK_TEXT = {
   start: () => "Starter kit",
   checkins: n => `Check in ${n} times`,
@@ -48,6 +71,8 @@ const SLOT_ICON = {
   shoes: `<path d="M3 16c0-3 1-6 3-7l3 2 3-1 3 3c2 1 6 1 6 3v2H3z"/><path d="M3 18h18"/>`,
   head: `<path d="M4 12c0-4 4-6 8-6s8 2 8 6"/><path d="M4 12c3 2 13 2 16 0M12 6c1-2 3-3 5-3"/>`,
   arms: `<path d="M6 8c3-2 9-2 12 0v3c-3-2-9-2-12 0z"/><path d="M12 11c0 3-1 6-3 9M12 11c0 3 1 6 3 9"/>`,
+  mouth: `<path d="M4 10c2-3 14-3 16 0-1 5-4 7-8 7s-7-2-8-7z"/><path d="M7 11h10M9 11v3M12 11v3M15 11v3"/>`,
+  outfit: `<path d="M8 3 4 6l2 4 2-1v12h8V9l2 1 2-4-4-3-2 2h-4z"/><path d="M10 14h4"/>`,
   extra: `<circle cx="12" cy="12" r="6"/><path d="M6 12h12M12 6v12"/>`,
 };
 
@@ -75,8 +100,12 @@ function itemState(it, st){
 function lockerData(){ return S.settings.locker || {equipped: {}}; }
 function equipped(){
   const eq = {...(lockerData().equipped || {})};
-  ITEMS.filter(i => i.unlock.type === "start").forEach(i => { if (!(i.slot in eq)) eq[i.slot] = i.id; });
+  ITEMS.filter(i => i.unlock.type === "start" && i.slot !== "outfit").forEach(i => { if (!(i.slot in eq)) eq[i.slot] = i.id; });
   return eq;
+}
+function outfitLook(){   // the render Swole should wear, if an outfit with a render is equipped
+  const id = equipped().outfit; const it = id && ITEMS.find(i => i.id === id);
+  return it && it.look ? it.look : null;
 }
 function newUnlocks(){
   const st = lockerStats(), seen = LS.get("swole:lockerSeen", []);
