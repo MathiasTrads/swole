@@ -13,7 +13,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icons/icon-192.png">
-<link rel="preload" href="fonts/Karantina-Bold.ttf?v=14" as="font" type="font/ttf" crossorigin>
+<link rel="preload" href="fonts/Karantina-Bold.ttf?v=15" as="font" type="font/ttf" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Sora:wght@300;400;500;600;700;800&display=swap">
@@ -493,7 +493,7 @@ input[type=number],input[type=text],input[type=password],textarea{background:#F4
 .hero2 .fig img{width:min(102vw, 560px);-webkit-mask-image:linear-gradient(to bottom,#000 88%,transparent 100%);mask-image:linear-gradient(to bottom,#000 88%,transparent 100%)}
 .bigword{top:calc(env(safe-area-inset-top,0px) + 9vh)}
 
-@font-face{font-family:"Karantina";src:url("fonts/Karantina-Bold.ttf?v=14") format("truetype");font-weight:700;font-display:block}
+@font-face{font-family:"Karantina";src:url("fonts/Karantina-Bold.ttf?v=15") format("truetype");font-weight:700;font-display:block}
 /* ================= v11: Karantina + new character + moments ================= */
 .bigword text,.vword text,.mword text{font-family:"Karantina","Anton","Impact",sans-serif;font-weight:700}
 .bigword{top:calc(env(safe-area-inset-top,0px) + 5vh)}
@@ -613,11 +613,22 @@ html[data-theme=red] .lockpill .nu{background:#fff;color:var(--red2)}
 /* v14: true full bleed on iOS standalone (layout viewport can stop above the home indicator) */
 html{background:var(--paper2)}
 html:has(.app.is-locker),html:has(.app.is-locker) body{background:#FF3B2F!important}
-.home3,.locker{top:0;left:0;right:0;bottom:auto;height:calc(100lvh + env(safe-area-inset-bottom,0px) + 2px);min-height:100%}
+
 .h3fig{bottom:calc(-1.5svh + 0px)}
 /* Swole's message sits behind him */
 .h3say{z-index:1;text-shadow:none}
 .h3fig{z-index:2}
+
+/* v15: bottom inset that survives iOS 26 standalone (webview can already stop above the home indicator) */
+:root{--sb:env(safe-area-inset-bottom,0px);--tabh:64px}
+html{min-height:calc(100% + env(safe-area-inset-top,0px))}
+.home3,.locker{inset:0;height:auto}
+.tabs{padding:0 12px calc(6px + var(--sb))}
+.h3today{bottom:calc(var(--sb) + 6px + var(--tabh) + 12px)}
+.lgrid{bottom:calc(var(--sb) + 6px + var(--tabh) + 8px)}
+.lfig{bottom:calc(var(--sb) + var(--tabh) - 4px)}
+.toast{bottom:calc(var(--sb) + var(--tabh) + 24px)}
+.h3fig img,.h3fig video{pointer-events:auto;cursor:pointer;-webkit-tap-highlight-color:transparent}
 </style>
 </head>
 <body>
@@ -630,8 +641,8 @@ html:has(.app.is-locker),html:has(.app.is-locker) body{background:#FF3B2F!import
 </nav></div>
 <div class="sheet" id="sheet" hidden><div class="in" id="sheetIn"></div></div>
 <div class="toast" id="toast" hidden></div>
-<script src="plan.js?v=14"></script>
-<script src="locker.js?v=14"></script>
-<script src="app.js?v=14"></script>
+<script src="plan.js?v=15"></script>
+<script src="locker.js?v=15"></script>
+<script src="app.js?v=15"></script>
 </body>
 </html>

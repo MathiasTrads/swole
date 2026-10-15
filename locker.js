@@ -50,7 +50,7 @@ const ITEMS = [
   I("c-racing",        "casual",    "outfit", "Candy racing jacket",     "legendary", {type: "checkins", n: 100},"100 check-ins. Loud and proud."),
 ];
 /* outfit renders: filled in when the Magnific renders land (media/outfits/<id>.webp + -thumb.webp) */
-const OUTFIT_READY = [];
+const OUTFIT_READY = ["l-black","l-brown","l-charcoal","c-blacktee","c-jorts","c-knit","c-retro","c-fleece","c-jersey","c-racing"];
 ITEMS.forEach(it => { if (it.slot === "outfit" && OUTFIT_READY.includes(it.id)){ it.img = `media/outfits/${it.id}-thumb.webp`; it.look = `media/outfits/${it.id}.webp`; } });
 const UNLOCK_TEXT = {
   start: () => "Starter kit",

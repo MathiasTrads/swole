@@ -202,6 +202,7 @@ const MOMENT = {
   intro:{src:"media/m-intro.webp", ms:5100, word:"I'M SWOLE", sub:"Your coach for the next 26 weeks. Check in every morning. I'll handle the rest."},
   kick:{src:"media/m-kick.webp", ms:5100, word:"LET'S GO", sub:""},
   flex:{src:"media/m-flex.webp", ms:5100, word:"DONE", sub:"Logged. That's how you get swole."},
+  pose:{src:"media/m-pose.webp", ms:5100, word:"SWOLE", sub:""},
   shadow:{src:"media/m-shadow.webp", ms:6100, word:"FINISHED", sub:"Intervals done. Log your max HR."},
 };
 const EMO = n => `media/emote/${n}.webp`;
@@ -551,8 +552,8 @@ async function openSettings(){
     </div>
 
     <div class="block">
-      <h3>App<small>v14 · PWA</small></h3>
-      <p class="verdict-l" style="text-align:left;max-width:none;margin:6px 0 12px">${isStandalone() ? "Running from your Home Screen." : "Tip: Share → Add to Home Screen for full-screen and reminders."}</p>
+      <h3>App<small>v15 · PWA</small></h3>
+      <p class="verdict-l" style="text-align:left;max-width:none;margin:6px 0 12px">${isStandalone() ? "Running from your Home Screen." : "Tip: Share → Add to Home Screen for full-screen and reminders."}<br><small style="opacity:.6">Screen ${(window.__vp||{}).screen} · view ${(window.__vp||{}).inner} · inset ${(window.__vp||{}).envB} · gap ${(window.__vp||{}).gap}</small></p>
     </div>`);
 }
 
@@ -783,8 +784,28 @@ function closeMoment(){
   setTimeout(() => { el.hidden = true; const img = el.querySelector(".mfig"); if (img && img.src.startsWith("blob:")) URL.revokeObjectURL(img.src); el.innerHTML = ""; }, 260);
 }
 
+/* ============ VIEWPORT FIX ============ */
+// iOS 26 home-screen apps can hand us a webview that already ends above the home indicator,
+// while env(safe-area-inset-bottom) still reports ~34px. Then everything sits too high.
+function fitViewport(){
+  const r = document.documentElement;
+  const probe = document.createElement("div");
+  probe.style.cssText = "position:fixed;left:0;top:0;width:1px;height:env(safe-area-inset-bottom,0px);visibility:hidden;pointer-events:none";
+  document.body.appendChild(probe); const envB = probe.getBoundingClientRect().height; probe.remove();
+  const portrait = window.matchMedia("(orientation: portrait)").matches;
+  const gap = isStandalone() && portrait ? Math.max(0, screen.height - window.innerHeight) : 0;
+  r.style.setProperty("--sb", Math.max(0, envB - gap) + "px");
+  const nav = document.querySelector(".tabs nav"); if (nav) r.style.setProperty("--tabh", Math.round(nav.getBoundingClientRect().height) + "px");
+  window.__vp = {envB, gap, inner: window.innerHeight, screen: screen.height};
+}
+window.addEventListener("resize", fitViewport);
+// tap Swole on the home screen: knee-up pose + wink
+document.addEventListener("click", e => { if (e.target.closest(".h3fig img, .h3fig video")) playMoment("pose"); });
+window.addEventListener("orientationchange", () => setTimeout(fitViewport, 300));
+
 /* ============ BOOT ============ */
 applyTheme();
+fitViewport();
 render();
 if (!LS.get("swole:introSeen", false)){ LS.set("swole:introSeen", true); playMoment("intro"); }
 setTimeout(preloadMoments, 2500);
