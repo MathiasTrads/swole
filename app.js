@@ -568,7 +568,7 @@ async function openSettings(){
     </div>
 
     <div class="block">
-      <h3>App<small>v17 · PWA</small></h3>
+      <h3>App<small>v18 · PWA</small></h3>
       <p class="verdict-l" style="text-align:left;max-width:none;margin:6px 0 12px">${isStandalone() ? "Running from your Home Screen." : "Tip: Share → Add to Home Screen for full-screen and reminders."}<br><small style="opacity:.6">Screen ${(window.__vp||{}).screen} · view ${(window.__vp||{}).inner} · inset ${(window.__vp||{}).envB} · gap ${(window.__vp||{}).gap}</small></p>
     </div>`);
 }
