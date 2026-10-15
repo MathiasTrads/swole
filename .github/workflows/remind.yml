@@ -1,8 +1,9 @@
 name: Morning reminder
 on:
   schedule:
-    - cron: "5 4 * * *"   # 06:05 Copenhagen in summer time (CEST)
-    - cron: "5 5 * * *"   # 06:05 Copenhagen in winter time (CET)
+    # GitHub often starts scheduled runs late, so we start ~90 min early and the script waits until 06:05.
+    - cron: "35 2 * * *"   # summer time (CEST): 04:35 local
+    - cron: "35 3 * * *"   # winter time (CET): 04:35 local
   workflow_dispatch:
     inputs:
       force:
@@ -12,7 +13,7 @@ on:
 jobs:
   remind:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 150
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -26,4 +27,5 @@ jobs:
           VAPID_PUBLIC: ${{ secrets.VAPID_PUBLIC }}
           VAPID_PRIVATE: ${{ secrets.VAPID_PRIVATE }}
           DATA_REPO: ${{ github.repository_owner }}/swole-data
+          SCHEDULE: ${{ github.event.schedule }}
           FORCE: ${{ github.event_name == 'workflow_dispatch' && inputs.force && '1' || '' }}

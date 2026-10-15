@@ -4,10 +4,23 @@ import vm from "node:vm";
 import webpush from "web-push";
 
 const {DATA_TOKEN, VAPID_PUBLIC, VAPID_PRIVATE, DATA_REPO, FORCE} = process.env;
-const now = new Date();
-const local = new Intl.DateTimeFormat("en-GB", {timeZone: "Europe/Copenhagen", hour: "2-digit", hour12: false}).format(now);
-// Two cron lines cover summer and winter time; only the one that lands at 06:xx Copenhagen time sends.
-if (!FORCE && Number(local) !== 6) { console.log(`Copenhagen hour is ${local}, not 06. Skipping.`); process.exit(0); }
+const {SCHEDULE} = process.env;
+// Copenhagen offset right now (+1 winter, +2 summer)
+const offH = d => { const p = Object.fromEntries(new Intl.DateTimeFormat("en-US", {timeZone: "Europe/Copenhagen", hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit"}).formatToParts(d).map(x => [x.type, x.value]));
+  return Math.round((Date.UTC(+p.year, p.month - 1, +p.day, +p.hour, +p.minute) - d.getTime()) / 36e5); };
+if (!FORCE) {
+  const off = offH(new Date());
+  // Two cron lines (one per DST regime). Only the one meant for today's offset continues.
+  const mine = off === 2 ? "35 2 * * *" : "35 3 * * *";
+  if (SCHEDULE && SCHEDULE.trim() !== mine) { console.log(`Run for "${SCHEDULE}", today's slot is "${mine}". Skipping.`); process.exit(0); }
+  const now = new Date();
+  const loc = new Date(now.getTime() + off * 36e5);
+  const target = Date.UTC(loc.getUTCFullYear(), loc.getUTCMonth(), loc.getUTCDate(), 6, 5) - off * 36e5;   // 06:05 local, as UTC ms
+  const wait = target - now.getTime();
+  if (wait < -3 * 36e5) { console.log("More than 3 h late. Skipping."); process.exit(0); }
+  if (wait > 0) { console.log(`Waiting ${Math.round(wait / 6e4)} min until 06:05 Copenhagen.`); await new Promise(r => setTimeout(r, wait)); }
+  else console.log(`Started ${Math.round(-wait / 6e4)} min late. Sending now.`);
+}
 
 // Today's plan, from the same plan.js the app uses.
 const ctx = vm.createContext({console});

@@ -251,6 +251,7 @@ const ICON = {
 };
 /* ============ UI STATE ============ */
 let tab = "dag";
+let homeMode = "today";
 let schedMode = "week";
 let schedDate = new Date();
 
@@ -268,8 +269,9 @@ function render(){
   const app = document.getElementById("app");
   app.classList.toggle("is-home", tab === "dag");
   document.documentElement.classList.toggle("lock", tab === "dag");
-  app.innerHTML = tab === "dag" ? viewHome() : tab === "skema" ? viewSchedule() : tab === "plan" ? viewPlan() : viewTests();
-  if (tab === "dag") bindTilt();
+  app.classList.toggle("is-locker", tab === "dag" && homeMode === "locker");
+  app.innerHTML = tab === "dag" ? (homeMode === "locker" ? viewLocker() : viewHome()) : tab === "skema" ? viewSchedule() : tab === "plan" ? viewPlan() : viewTests();
+
 }
 
 /* ---------- HOME ---------- */
@@ -296,31 +298,68 @@ function viewHome(){
   const tm = addDays(d,1), tItems = plannedFor(tm);
   const status = r ? LEVEL[r.level].word : "Not checked in";
   const wk = ph ? `Week ${w} · ${ph.name}` : w < 1 ? `Starts Oct 19 · ${daysBetween(d,START)} days` : "Plan complete";
+  const nu = newUnlocks().length;
   return `
-  <section class="home2">
-    <div class="hero2" id="hero">
-      <svg class="bigword" viewBox="0 0 1000 400" preserveAspectRatio="xMidYMin meet" aria-hidden="true"><text x="0" y="372" textLength="1000" lengthAdjust="spacingAndGlyphs">SWOLE</text></svg>
-      <button class="roundbtn floatgear" data-act="settings" aria-label="Settings">${ICON.gear}<span id="syncdot" data-state="${GH.state}"></span></button>
-      <div class="fig">${art ? mediaTag(art) : swoleSVG(mood)}</div>
-    </div>
-    <div class="cards2">
-      <div class="card2">
-        <div class="meta2">
-          <span class="state2" style="--c:${r ? LEVEL[r.level].color : "#8a7f7d"}">${esc(status)}</span>
-          <span class="stars" aria-label="Readiness ${stars} of 5">${[1,2,3,4,5].map(i => `<i class="${i <= stars ? "on" : ""}">★</i>`).join("")}</span>
-          <span class="wk2">${esc(wk)}</span>
-        </div>
-        <button class="say2" data-act="saytoggle" aria-expanded="false"><img class="emo" src="${EMO(r ? {g:"smile",y:"smug",r:"yawn"}[r.level] : "wink")}" alt=""> <span>${lines.map(esc).join(" ")}</span><i aria-hidden="true">›</i></button>
-      </div>
-      <div class="card2">
-        <div class="today2-h"><h2>Today</h2><span>Tomorrow · ${tItems.length ? tItems.map(it => esc(SESS[it.id].title.split(" · ")[0])).join(" + ") : "Rest"}</span></div>
-        ${items.length ? items.map(it => { const s2 = SESS[it.id], k = key+"_"+it.slot;
-          return `<button class="r2 kind-${s2.kind}" data-open="${k}|${it.id}"><span class="t2">${esc(slotTime(it))}</span><span class="n2">${esc(s2.title)}<small>${esc(s2.dur)} · ${esc(s2.sub)}</small></span>${statusChip(k) || `<span class="go2">›</span>`}</button>`; }).join("")
-          : `<div class="r2"><span class="t2">All day</span><span class="n2">Rest day<small>Walk, eat, sleep 8 hours</small></span><span></span></div>`}
-        <button class="pill wide" data-act="checkin">${ci ? "Redo check-in" : "Start check-in"}</button>
-      </div>
+  <section class="home3">
+    <svg class="bigword" viewBox="0 0 1000 500" aria-hidden="true"><text x="0" y="492" textLength="1000" lengthAdjust="spacingAndGlyphs">SWOLE</text></svg>
+    <div class="h3fig">${art ? mediaTag(art) : swoleSVG(mood)}</div>
+    <p class="h3say"><b>Report says:</b> ${lines.map(esc).join(" ")}</p>
+    ${topBar(false, nu)}
+    <div class="card2 h3today">
+      <div class="today2-h"><h2>Today</h2><span>Tomorrow · ${tItems.length ? tItems.map(it => esc(SESS[it.id].title.split(" · ")[0])).join(" + ") : "Rest"}</span></div>
+      ${items.length ? items.map(it => { const s2 = SESS[it.id], k = key+"_"+it.slot;
+        return `<button class="r2 kind-${s2.kind}" data-open="${k}|${it.id}"><span class="t2">${esc(slotTime(it))}</span><span class="n2">${esc(s2.title)}<small>${esc(s2.dur)} · ${esc(s2.sub)}</small></span>${statusChip(k) || `<span class="go2">›</span>`}</button>`; }).join("")
+        : `<div class="r2"><span class="t2">All day</span><span class="n2">Rest day<small>Walk, eat, sleep 8 hours</small></span><span></span></div>`}
+      <button class="pill wide" data-act="checkin">${ci ? "Redo check-in" : "Start check-in"}</button>
     </div>
   </section>`;
+}
+function topBar(inLocker, nu){
+  return `<div class="h3top"><button class="sqbtn" data-act="settings" aria-label="Settings">${ICON.gear}<span id="syncdot" data-state="${GH.state}"></span></button><button class="lockpill ${inLocker ? "on" : ""}" data-act="locker">Locker${nu && !inLocker ? `<i class="nu">${nu}</i>` : ""}</button></div>`;
+}
+
+/* ---------- LOCKER ---------- */
+function viewLocker(){
+  const st = lockerStats(), eq = equipped(), seen = LS.get("swole:lockerSeen", []);
+  const tiles = ITEMS.map(it => {
+    const s = itemState(it, st), R = RARITY[it.rarity], on = eq[it.slot] === it.id, isNew = s.open && it.unlock.type !== "start" && !seen.includes(it.id);
+    return `<button class="ltile ${s.open ? "" : "locked"} ${on ? "on" : ""}" style="--rc:${R.c}" data-item="${it.id}" aria-label="${esc(it.name)}${s.open ? "" : " (locked)"}">
+      ${it.img ? `<img src="${it.img}" alt="" loading="lazy">` : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">${SLOT_ICON[it.slot] || SLOT_ICON.extra}</svg>`}
+      ${s.open ? "" : `<span class="lk"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span><span class="prog"><i style="width:${Math.round(s.have/s.need*100)}%"></i></span>`}
+      ${on ? `<span class="eq">✓</span>` : ""}${isNew ? `<span class="new">NEW</span>` : ""}
+    </button>`;
+  }).join("");
+  const owned = ITEMS.filter(i => itemState(i, st).open).length;
+  return `
+  <section class="locker">
+    ${topBar(true, 0)}
+    <div class="lhead"><span>${owned}/${ITEMS.length} unlocked</span></div>
+    <div class="lgrid">${tiles}</div>
+    <div class="lfig">${mediaTag(BUILTIN)}</div>
+  </section>`;
+}
+function openItem(id){
+  const it = ITEMS.find(i => i.id === id); if (!it) return;
+  const st = lockerStats(), s = itemState(it, st), R = RARITY[it.rarity], on = equipped()[it.slot] === it.id;
+  const seen = LS.get("swole:lockerSeen", []); if (s.open && !seen.includes(id)){ LS.set("swole:lockerSeen", [...seen, id]); }
+  openSheet(`
+    <div class="close"><span class="eyebrow">Locker · ${esc(SLOTS[it.slot] || it.slot)}</span><button data-act="close">Close ✕</button></div>
+    <div class="idet" style="--rc:${R.c}">
+      <div class="iart ${s.open ? "" : "locked"}">${it.img ? `<img src="${it.img}" alt="">` : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">${SLOT_ICON[it.slot] || SLOT_ICON.extra}</svg>`}</div>
+      <span class="rar">${R.label}</span>
+      <h1 class="sh-title">${esc(it.name)}</h1>
+      <p>${esc(it.desc || "")}</p>
+      ${it.unlock.type === "start" ? "" : `<div class="ireq"><div><b>${esc(UNLOCK_TEXT[it.unlock.type](it.unlock.n))}</b><span>${s.have} / ${s.need}</span></div><span class="prog big"><i style="width:${Math.round(s.have/s.need*100)}%"></i></span></div>`}
+      ${s.open ? `<button class="pill wide" data-equip="${it.id}" ${on ? "disabled" : ""}>${on ? "Equipped" : "Equip"}</button>` : `<button class="pill wide" disabled>Locked</button>`}
+      ${s.open && !it.look ? `<p class="inote">Swole's figure gets this look once the render is made.</p>` : ""}
+    </div>`);
+}
+async function equipItem(id){
+  const it = ITEMS.find(i => i.id === id); if (!it) return;
+  const L = {...lockerData()}; L.equipped = {...equipped(), [it.slot]: id};
+  await save("settings", "locker", L);
+  toast(`${it.name} equipped.`);
+  openItem(id);
 }
 function bindTilt(){
   const h = document.getElementById("hero"); if (!h) return;
@@ -502,7 +541,7 @@ async function openSettings(){
     </div>
 
     <div class="block">
-      <h3>App<small>v11 · PWA</small></h3>
+      <h3>App<small>v12 · PWA</small></h3>
       <p class="verdict-l" style="text-align:left;max-width:none;margin:6px 0 12px">${isStandalone() ? "Running from your Home Screen." : "Tip: Share → Add to Home Screen for full-screen and reminders."}</p>
     </div>`);
 }
@@ -657,7 +696,7 @@ async function saveCI(){
 }
 
 /* ============ EVENTS ============ */
-document.getElementById("tabs").addEventListener("click", e => { const b = e.target.closest("button[data-tab]"); if (!b) return; tab = b.dataset.tab; if (tab === "skema"){ schedDate = new Date(); } render(); window.scrollTo(0,0); });
+document.getElementById("tabs").addEventListener("click", e => { const b = e.target.closest("button[data-tab]"); if (!b) return; tab = b.dataset.tab; homeMode = "today"; if (tab === "skema"){ schedDate = new Date(); } render(); window.scrollTo(0,0); });
 document.addEventListener("click", async e => {
   const t = e.target.closest("button"); if (!t) return;
   const act = t.dataset.act;
@@ -671,6 +710,7 @@ document.addEventListener("click", async e => {
   else if (act === "syncnow"){ await loadAll(); render(); toast(GH.state === "synced" ? "Synced." : "Couldn't sync."); openSettings(); }
   else if (act === "pushon"){ t.disabled = true; await enablePush(); openSettings(); }
   else if (act === "checkin"){ startCheckin(); }
+  else if (act === "locker"){ homeMode = homeMode === "locker" ? "today" : "locker"; render(); }
   else if (act === "replayintro"){ document.getElementById("sheet").hidden = true; render(); playMoment("intro"); }
   else if (t.dataset.theme){ setTheme(t.dataset.theme); openSettings(); }
   else if (act === "close"){ CI = null; closeSheet(); }
@@ -690,6 +730,8 @@ document.addEventListener("click", async e => {
   else if (t.dataset.goday){ schedDate = parse(t.dataset.goday); schedMode = "day"; render(); window.scrollTo(0,0); }
   else if (t.dataset.gomonth){ schedDate = parse(t.dataset.gomonth); schedMode = "month"; render(); window.scrollTo(0,0); }
   else if (t.dataset.open){ const [k,id] = t.dataset.open.split("|"); openSession(k,id); }
+  else if (t.dataset.item){ openItem(t.dataset.item); }
+  else if (t.dataset.equip){ equipItem(t.dataset.equip); }
   else if (t.dataset.savetest){ saveTest(t.dataset.savetest); }
   else if (t.dataset.status){ document.querySelectorAll("#logStatus .opt").forEach(b => b.setAttribute("aria-pressed", b === t)); }
   else if (t.dataset.rpe){ document.querySelectorAll("#logRpe button").forEach(b => b.setAttribute("aria-pressed", b === t)); }

@@ -13,7 +13,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icons/icon-192.png">
-<link rel="preload" href="fonts/Karantina-Bold.ttf?v=11" as="font" type="font/ttf" crossorigin>
+<link rel="preload" href="fonts/Karantina-Bold.ttf?v=12" as="font" type="font/ttf" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Sora:wght@300;400;500;600;700;800&display=swap">
@@ -493,7 +493,7 @@ input[type=number],input[type=text],input[type=password],textarea{background:#F4
 .hero2 .fig img{width:min(102vw, 560px);-webkit-mask-image:linear-gradient(to bottom,#000 88%,transparent 100%);mask-image:linear-gradient(to bottom,#000 88%,transparent 100%)}
 .bigword{top:calc(env(safe-area-inset-top,0px) + 9vh)}
 
-@font-face{font-family:"Karantina";src:url("fonts/Karantina-Bold.ttf?v=11") format("truetype");font-weight:700;font-display:block}
+@font-face{font-family:"Karantina";src:url("fonts/Karantina-Bold.ttf?v=12") format("truetype");font-weight:700;font-display:block}
 /* ================= v11: Karantina + new character + moments ================= */
 .bigword text,.vword text,.mword text{font-family:"Karantina","Anton","Impact",sans-serif;font-weight:700}
 .bigword{top:calc(env(safe-area-inset-top,0px) + 5vh)}
@@ -545,6 +545,63 @@ html[data-theme=red] .say2 .emo,html[data-theme=red] .emo.lg{box-shadow:0 0 0 2p
 html[data-theme=red] .ci-prog i.on{background:#fff}
 html[data-theme=red] .cell.today{box-shadow:0 0 0 2px #fff}
 html[data-theme=red] .field label{color:#fff}
+/* ================= v12: giant Swole, free text, Locker ================= */
+.hero2 .fig img,.vfig img,#moment .mfig{filter:none!important}
+.app.is-home{padding:0}
+.home3{position:fixed;inset:0;overflow:hidden;background:var(--paper2)}
+.home3 .bigword{position:absolute;left:3.5vw;right:3.5vw;width:93vw;height:auto;top:calc(env(safe-area-inset-top,0px) + 76px);z-index:0}
+.home3 .bigword text{font-size:660px}
+.h3fig{position:absolute;left:0;right:0;top:calc(env(safe-area-inset-top,0px) + 8px);bottom:-1.5svh;z-index:1;pointer-events:none}
+.h3fig img{position:absolute;left:55%;bottom:0;height:100%;width:auto;max-width:none;transform:translateX(-50%)}
+.h3say{position:absolute;z-index:2;left:max(16px,env(safe-area-inset-left,0px));width:min(52vw,260px);top:calc(env(safe-area-inset-top,0px) + 76px + 93vw*.5 + 14px);margin:0;font-size:14px;line-height:1.35;font-weight:500;color:var(--ink2);display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden;
+  text-shadow:0 0 6px var(--paper2),0 0 3px var(--paper2),0 0 1px var(--paper2)}
+.h3say b{color:var(--red2);font-weight:700}
+.h3top{position:absolute;z-index:4;top:calc(env(safe-area-inset-top,0px) + 14px);left:max(16px,env(safe-area-inset-left,0px));display:flex;gap:8px;align-items:center}
+.sqbtn{position:relative;width:36px;height:36px;border-radius:10px;background:#141010;color:#fff;border:0;display:grid;place-items:center;padding:0}
+.sqbtn svg{width:18px;height:18px}
+.sqbtn #syncdot{position:absolute;top:5px;right:5px;width:6px;height:6px}
+.lockpill{position:relative;height:36px;padding:0 14px;border-radius:999px;background:#141010;color:#fff;border:0;font:700 15px/1 var(--f);letter-spacing:-.01em}
+.lockpill.on{background:#fff;color:#141010}
+.lockpill .nu{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;border-radius:9px;background:var(--red2);color:#fff;font:700 10px/18px var(--f);font-style:normal;text-align:center;box-shadow:0 0 0 2px var(--paper2)}
+html[data-theme=red] .lockpill .nu{background:#fff;color:var(--red2)}
+.h3today{position:absolute;z-index:3;left:max(14px,env(safe-area-inset-left,0px));width:min(62vw,340px);bottom:calc(84px + env(safe-area-inset-bottom,0px));margin:0}
+/* locker */
+.app.is-locker{padding:0}
+.locker{position:fixed;inset:0;background:#FF3B2F;overflow:hidden}
+.locker .h3top{position:absolute}
+.lhead{position:absolute;z-index:2;top:calc(env(safe-area-inset-top,0px) + 22px);right:max(16px,env(safe-area-inset-right,0px));font:600 11px/1 var(--f);letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.85)}
+.lgrid{position:absolute;z-index:1;top:calc(env(safe-area-inset-top,0px) + 66px);bottom:calc(92px + env(safe-area-inset-bottom,0px));left:max(16px,env(safe-area-inset-left,0px));width:min(71vw,330px);display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:min-content;gap:12px;overflow-y:auto;padding-bottom:20px;scrollbar-width:none}
+.lgrid::-webkit-scrollbar{display:none}
+.ltile{position:relative;aspect-ratio:1/1.04;border-radius:16px;border:0;padding:6px;background:radial-gradient(120% 90% at 50% 20%,#262222 0%,#0B0909 70%);color:#5E5655;overflow:hidden;box-shadow:inset 0 -3px 0 var(--rc)}
+.ltile img{width:100%;height:100%;object-fit:contain}
+.ltile svg{width:58%;height:58%;margin:auto;display:block;color:#6E6564}
+.ltile.locked img{filter:grayscale(1) brightness(.35)}
+.ltile.locked svg{color:#3A3434}
+.ltile .lk{position:absolute;top:7px;right:7px;color:#8A817F}
+.ltile .prog{position:absolute;left:9px;right:9px;bottom:9px;height:3px;border-radius:2px;background:#2A2525;overflow:hidden}
+.prog i{display:block;height:100%;background:var(--rc)}
+.ltile.on{box-shadow:inset 0 -3px 0 var(--rc),0 0 0 2.5px #fff}
+.ltile .eq{position:absolute;top:6px;left:6px;width:18px;height:18px;border-radius:50%;background:#fff;color:#141010;font:800 11px/18px var(--f);text-align:center}
+.ltile .new{position:absolute;top:6px;right:6px;padding:2px 5px;border-radius:6px;background:#fff;color:var(--red2);font:800 9px/1.2 var(--f);letter-spacing:.06em}
+.lfig{position:absolute;z-index:2;right:1vw;bottom:calc(76px + env(safe-area-inset-bottom,0px));height:min(50svh,430px);pointer-events:none}
+.lfig img{height:100%;width:auto}
+/* item sheet */
+.idet{display:flex;flex-direction:column;gap:10px}
+.iart{align-self:center;width:min(64vw,260px);aspect-ratio:1;border-radius:26px;background:radial-gradient(120% 90% at 50% 20%,#2A2525 0%,#0B0909 70%);box-shadow:inset 0 -4px 0 var(--rc),0 14px 30px rgba(0,0,0,.25);display:grid;place-items:center;padding:14px;color:#6E6564}
+.iart img{width:100%;height:100%;object-fit:contain}
+.iart svg{width:60%;height:60%}
+.iart.locked img{filter:grayscale(1) brightness(.4)}
+.idet .rar{align-self:flex-start;padding:4px 10px;border-radius:999px;background:var(--rc);color:#141010;font:800 10px/1.2 var(--f);letter-spacing:.12em;text-transform:uppercase}
+.idet .sh-title{margin:0}
+.idet p{margin:0;color:var(--ink2)}
+.idet .inote{font-size:12px;color:#7D716F}
+.ireq{background:var(--card);color:var(--text);border-radius:16px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.ireq div{display:flex;justify-content:space-between;gap:10px;font-size:13px}
+.ireq span{color:var(--muted)}
+.prog.big{display:block;height:6px;border-radius:3px;background:#2A2525;overflow:hidden}
+.pill[disabled]{opacity:.55}
+/* moments: bigger figure */
+#moment .mfig{height:84svh}
 </style>
 </head>
 <body>
@@ -557,7 +614,8 @@ html[data-theme=red] .field label{color:#fff}
 </nav></div>
 <div class="sheet" id="sheet" hidden><div class="in" id="sheetIn"></div></div>
 <div class="toast" id="toast" hidden></div>
-<script src="plan.js?v=11"></script>
-<script src="app.js?v=11"></script>
+<script src="plan.js?v=12"></script>
+<script src="locker.js?v=12"></script>
+<script src="app.js?v=12"></script>
 </body>
 </html>
