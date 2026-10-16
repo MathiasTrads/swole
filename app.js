@@ -52,9 +52,10 @@ async function ghPut(file, data, message){
     } else throw e;
   }
 }
-function setSyncState(s){ GH.state = s; const dot = document.getElementById("syncdot"); if (dot) dot.dataset.state = s; }
+function setSyncState(s){ GH.state = s; if (SB.session) return; const dot = document.getElementById("syncdot"); if (dot) dot.dataset.state = s; }
 
-async function loadAll(){
+async function loadAll(){ await ghLoadAll(); await sbLoad(); }
+async function ghLoadAll(){
   if (!GH.token || !GH.owner) { setSyncState("local"); return; }
   setSyncState("syncing");
   try {
@@ -97,6 +98,8 @@ async function save(c, id, data){
   LS.set("swole:data:" + c, S[c]);
   GH.dirty[c] = true; LS.set("swole:dirty", GH.dirty);
   if (GH.token){ setSyncState("syncing"); flush(); }
+  sbMark(c, id);
+  if (SB.session){ sbSetState("syncing"); sbFlush(); }
 }
 window.addEventListener("online", () => flush());
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") loadAll().then(() => { applyTheme(); render(); }); });
@@ -330,7 +333,7 @@ function viewHome(){
   </section>`;
 }
 function topBar(inLocker, nu){
-  return `<div class="h3top"><button class="sqbtn" data-act="settings" aria-label="Settings">${ICON.gear}<span id="syncdot" data-state="${GH.state}"></span></button><button class="lockpill ${inLocker ? "on" : ""}" data-act="locker">Locker${nu && !inLocker ? `<i class="nu">${nu}</i>` : ""}</button></div>`;
+  return `<div class="h3top"><button class="sqbtn" data-act="settings" aria-label="Settings">${ICON.gear}<span id="syncdot" data-state="${SB.session ? SB.state : GH.state}"></span></button><button class="lockpill ${inLocker ? "on" : ""}" data-act="locker">Locker${nu && !inLocker ? `<i class="nu">${nu}</i>` : ""}</button></div>`;
 }
 
 function hubBar(){
@@ -548,17 +551,12 @@ async function openSettings(){
       <div class="opts" style="margin:8px 0 12px"><button class="opt" data-theme="white" aria-pressed="${theme() !== "red"}">White</button><button class="opt" data-theme="red" aria-pressed="${theme() === "red"}">Red</button><button class="opt" data-act="replayintro">Replay intro</button></div>
     </div>
 
-    <div class="block">
-      <h3>Your data<small>${esc(stateText)}</small></h3>
-      ${connected ? `
-        <p class="verdict-l" style="text-align:left;max-width:none;margin:6px 0">Check-ins, logs and tests are saved to your private repo <b>${esc(GH.owner)}/swole-data</b>. Swole reads them there to adjust your plan.${last ? ` Last sync ${last.toLocaleString("en-GB",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}.` : ""}</p>
-        ${GH.lastError || COLS.some(c => GH.dirty[c]) ? `<div class="banner r" style="margin:8px 0">Not uploaded yet: ${esc(COLS.filter(c => GH.dirty[c]).join(", ") || "nothing")}.${GH.lastError ? ` Last error: ${esc(GH.lastError)}.` : ""}</div>` : ""}
-        <div class="opts" style="margin:10px 0 12px"><button class="btn" data-act="syncnow">Sync now</button><button class="btn ghost" data-act="disconnect">Disconnect</button></div>`
-      : `
-        <p class="verdict-l" style="text-align:left;max-width:none;margin:6px 0 10px">Paste your GitHub token to back up your data and let Swole read it. Without it, everything stays on this phone.</p>
-        <div class="field" style="margin-bottom:10px"><label for="ghToken">GitHub token</label><input type="password" id="ghToken" autocomplete="off" placeholder="github_pat_…"></div>
-        <div style="margin-bottom:12px"><button class="btn red" data-act="connect">Connect</button></div>`}
-    </div>
+    ${sbSettingsBlock()}
+    ${connected ? `<div class="block">
+      <h3>GitHub backup<small>${esc(stateText)}</small></h3>
+      <p class="verdict-l" style="text-align:left;max-width:none;margin:6px 0">Also copied to your private repo <b>${esc(GH.owner)}/swole-data</b>, which the 06:05 reminder reads.${last ? ` Last sync ${last.toLocaleString("en-GB",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}.` : ""}</p>
+      <div class="opts" style="margin:10px 0 12px"><button class="btn" data-act="syncnow">Sync now</button><button class="btn ghost" data-act="disconnect">Disconnect</button></div>
+    </div>` : ""}
 
     <div class="block">
       <h3>Morning reminder<small>06:05 every day</small></h3>
@@ -571,7 +569,7 @@ async function openSettings(){
     </div>
 
     <div class="block">
-      <h3>App<small>v20 · PWA</small></h3>
+      <h3>App<small>v21 · PWA</small></h3>
       <p class="verdict-l" style="text-align:left;max-width:none;margin:6px 0 12px">${isStandalone() ? "Running from your Home Screen." : "Tip: Share → Add to Home Screen for full-screen and reminders."}<br><small style="opacity:.6">Screen ${(window.__vp||{}).screen} · view ${(window.__vp||{}).inner} · inset ${(window.__vp||{}).envB} · gap ${(window.__vp||{}).gap}</small></p>
     </div>`);
 }
@@ -841,4 +839,5 @@ render();
 if (!LS.get("swole:introSeen", false)){ LS.set("swole:introSeen", true); playMoment("intro"); }
 setTimeout(preloadMoments, 2500);
 if ("serviceWorker" in navigator){ navigator.serviceWorker.register("sw.js").catch(() => {}); }
+sbBoot();
 loadAll().then(render);

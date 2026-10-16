@@ -11,9 +11,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Swole">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=20">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=21">
 <link rel="icon" type="image/png" href="icons/icon-192.png">
-<link rel="preload" href="fonts/Karantina-Bold.ttf?v=20" as="font" type="font/ttf" crossorigin>
+<link rel="preload" href="fonts/Karantina-Bold.ttf?v=21" as="font" type="font/ttf" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Sora:wght@300;400;500;600;700;800&display=swap">
@@ -493,7 +493,7 @@ input[type=number],input[type=text],input[type=password],textarea{background:#F4
 .hero2 .fig img{width:min(102vw, 560px);-webkit-mask-image:linear-gradient(to bottom,#000 88%,transparent 100%);mask-image:linear-gradient(to bottom,#000 88%,transparent 100%)}
 .bigword{top:calc(env(safe-area-inset-top,0px) + 9vh)}
 
-@font-face{font-family:"Karantina";src:url("fonts/Karantina-Bold.ttf?v=20") format("truetype");font-weight:700;font-display:block}
+@font-face{font-family:"Karantina";src:url("fonts/Karantina-Bold.ttf?v=21") format("truetype");font-weight:700;font-display:block}
 /* ================= v11: Karantina + new character + moments ================= */
 .bigword text,.vword text,.mword text{font-family:"Karantina","Anton","Impact",sans-serif;font-weight:700}
 .bigword{top:calc(env(safe-area-inset-top,0px) + 5vh)}
@@ -838,6 +838,21 @@ html[data-theme=red] .app.is-social .sbig,html[data-theme=red] .app.is-social .s
 .pend img{height:150px;width:auto}
 .pend b{font-family:"Karantina","Anton",sans-serif;font-weight:700;font-size:40px;line-height:.9;text-transform:uppercase}
 .pend span{font-size:13px;color:#6E6564;max-width:260px}
+
+/* ===== v21 · login ===== */
+.auth{display:flex;flex-direction:column;align-items:stretch;gap:12px;padding:4px 4px 30px;max-width:420px;margin:0 auto}
+.authh{margin:6px 0 0;font-family:"Karantina","Anton",sans-serif;font-weight:700;font-size:64px;line-height:.86;text-transform:uppercase;color:var(--ink2)}
+.authfig{height:230px;width:auto;align-self:center;margin:-4px 0 -6px}
+.authp{margin:0;font-size:14.5px;line-height:1.45;color:#3A3232}
+.auth .field{flex:none}
+.auth .field label{color:#C8261B}
+.auth input{width:100%;height:52px;border-radius:16px;border:2px solid #E6E0DF;background:#fff;padding:0 16px;font:600 17px var(--f);color:#141010;outline:none}
+.auth input:focus{border-color:#FF3B2F}
+.auth #sbCode{letter-spacing:.3em;font-size:22px;text-align:center}
+.authgo{margin-top:4px}
+.authrow{display:flex;justify-content:space-between}
+.authlink{border:0;background:none;padding:6px 0;font:600 13px var(--f);color:#6E6564;text-decoration:underline}
+.authfine{margin:8px 0 0;font-size:11.5px;line-height:1.45;color:#8F8583}
 </style>
 </head>
 <body>
@@ -851,10 +866,11 @@ html[data-theme=red] .app.is-social .sbig,html[data-theme=red] .app.is-social .s
 </nav></div>
 <div class="sheet" id="sheet" hidden><div class="in" id="sheetIn"></div></div>
 <div class="toast" id="toast" hidden></div>
-<script src="plan.js?v=20"></script>
-<script src="locker.js?v=20"></script>
-<script src="social.js?v=20"></script>
-<script src="path.js?v=20"></script>
-<script src="app.js?v=20"></script>
+<script src="plan.js?v=21"></script>
+<script src="locker.js?v=21"></script>
+<script src="social.js?v=21"></script>
+<script src="sb.js?v=21"></script>
+<script src="path.js?v=21"></script>
+<script src="app.js?v=21"></script>
 </body>
 </html>
