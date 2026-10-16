@@ -132,6 +132,7 @@ async function pushState(){
   try { const reg = await navigator.serviceWorker.ready; const sub = await reg.pushManager.getSubscription(); return sub ? "on" : (Notification.permission === "denied" ? "denied" : "off"); } catch(e){ return "off"; }
 }
 async function enablePush(){
+  if (window.SWOLE_DEMO){ toast("Reminders are off in the demo."); return false; }
   if (!isStandalone() && /iPhone|iPad/.test(navigator.userAgent)){ toast("First add Swole to your Home Screen, then open it from there."); return false; }
   if (!("serviceWorker" in navigator) || !("PushManager" in window)){ toast("This browser can't receive reminders."); return false; }
   const perm = await Notification.requestPermission();
@@ -551,14 +552,14 @@ async function openSettings(){
       <div class="opts" style="margin:8px 0 12px"><button class="opt" data-theme="white" aria-pressed="${theme() !== "red"}">White</button><button class="opt" data-theme="red" aria-pressed="${theme() === "red"}">Red</button><button class="opt" data-act="replayintro">Replay intro</button></div>
     </div>
 
-    ${sbSettingsBlock()}
-    ${connected ? `<div class="block">
+    ${window.SWOLE_DEMO ? demoSettingsBlock() : sbSettingsBlock()}
+    ${connected && !window.SWOLE_DEMO ? `<div class="block">
       <h3>GitHub backup<small>${esc(stateText)}</small></h3>
       <p class="verdict-l" style="text-align:left;max-width:none;margin:6px 0">Also copied to your private repo <b>${esc(GH.owner)}/swole-data</b>, which the 06:05 reminder reads.${last ? ` Last sync ${last.toLocaleString("en-GB",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}.` : ""}</p>
       <div class="opts" style="margin:10px 0 12px"><button class="btn" data-act="syncnow">Sync now</button><button class="btn ghost" data-act="disconnect">Disconnect</button></div>
     </div>` : ""}
 
-    <div class="block">
+    ${window.SWOLE_DEMO ? "" : `    <div class="block">
       <h3>Morning reminder<small>06:05 every day</small></h3>
       <p class="verdict-l" style="text-align:left;max-width:none;margin:6px 0 10px">${
         ps === "on" ? "On. Swole will tell you what today holds and ask you to check in."
@@ -566,10 +567,10 @@ async function openSettings(){
         : ps === "unsupported" && !isStandalone() ? "Add Swole to your Home Screen first (Share → Add to Home Screen) and open it from there."
         : "Get a push at 06:05 with today's sessions and a nudge to check in."}</p>
       ${ps === "on" ? "" : `<div style="margin-bottom:12px"><button class="btn red" data-act="pushon" ${ps === "denied" ? "disabled" : ""}>Turn on reminder</button></div>`}
-    </div>
+    </div>`}
 
     <div class="block">
-      <h3>App<small>v21 · PWA</small></h3>
+      <h3>App<small>v22 · PWA</small></h3>
       <p class="verdict-l" style="text-align:left;max-width:none;margin:6px 0 12px">${isStandalone() ? "Running from your Home Screen." : "Tip: Share → Add to Home Screen for full-screen and reminders."}<br><small style="opacity:.6">Screen ${(window.__vp||{}).screen} · view ${(window.__vp||{}).inner} · inset ${(window.__vp||{}).envB} · gap ${(window.__vp||{}).gap}</small></p>
     </div>`);
 }

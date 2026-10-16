@@ -1,5 +1,7 @@
 /* ============ DATES ============ */
-const START = new Date(2026, 9, 19);
+const START = window.SWOLE_DEMO
+  ? (() => { const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate() - (d.getDay()+6)%7 - 28); return d; })()   // demo: always in week 5
+  : new Date(2026, 9, 19);
 const DAY = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 const DAYL = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
 const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];

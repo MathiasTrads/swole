@@ -222,6 +222,7 @@ function sbSettingsBlock(){
 
 /* ---------- boot ---------- */
 function sbBoot(){
+  if (window.SWOLE_DEMO) return;
   sbFromHash();
   if (!SB.session && !sbLS.get("swole:sb:skip", false)) setTimeout(() => { if (!SB.session) openAuth("email"); }, 1300);
 }
