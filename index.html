@@ -11,9 +11,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Swole">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=19">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=20">
 <link rel="icon" type="image/png" href="icons/icon-192.png">
-<link rel="preload" href="fonts/Karantina-Bold.ttf?v=19" as="font" type="font/ttf" crossorigin>
+<link rel="preload" href="fonts/Karantina-Bold.ttf?v=20" as="font" type="font/ttf" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Sora:wght@300;400;500;600;700;800&display=swap">
@@ -493,7 +493,7 @@ input[type=number],input[type=text],input[type=password],textarea{background:#F4
 .hero2 .fig img{width:min(102vw, 560px);-webkit-mask-image:linear-gradient(to bottom,#000 88%,transparent 100%);mask-image:linear-gradient(to bottom,#000 88%,transparent 100%)}
 .bigword{top:calc(env(safe-area-inset-top,0px) + 9vh)}
 
-@font-face{font-family:"Karantina";src:url("fonts/Karantina-Bold.ttf?v=19") format("truetype");font-weight:700;font-display:block}
+@font-face{font-family:"Karantina";src:url("fonts/Karantina-Bold.ttf?v=20") format("truetype");font-weight:700;font-display:block}
 /* ================= v11: Karantina + new character + moments ================= */
 .bigword text,.vword text,.mword text{font-family:"Karantina","Anton","Impact",sans-serif;font-weight:700}
 .bigword{top:calc(env(safe-area-inset-top,0px) + 5vh)}
@@ -779,6 +779,65 @@ html{min-height:calc(100% + env(safe-area-inset-top,0px))}
 .seg.mini button[aria-pressed=true]{background:var(--red2);color:#fff}
 .proto{font-size:11.5px;margin:14px 0 0;text-align:center}
 html[data-theme=red] .app.is-social .sbig,html[data-theme=red] .app.is-social .sh3{color:#fff}
+
+/* ===== v20 · THE PATH ===== */
+.hubseg{gap:4px}.hubseg button{font-size:12px;padding:0 4px}
+.phead{position:sticky;top:calc(env(safe-area-inset-top,0px) + 6px);z-index:6;background:var(--pc);color:#fff;border-radius:22px;padding:12px 14px 10px;box-shadow:0 6px 0 color-mix(in srgb,var(--pc) 62%,#000);transition:background .3s,box-shadow .3s}
+.phtop{display:flex;align-items:center;gap:10px}
+.phead .hd{box-shadow:0 0 0 2px #fff}
+.phtxt{flex:1;min-width:0;display:flex;flex-direction:column}
+.phtxt span{font:700 10.5px/1.2 var(--f);letter-spacing:.12em;text-transform:uppercase;opacity:.85}
+.phtxt b{font-family:"Karantina","Anton",sans-serif;font-weight:700;font-size:31px;line-height:.92;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.phstat{display:flex;align-items:center;gap:4px;font:800 15px/1 var(--f)}
+.phstat i{width:20px;height:20px;color:#FFC531;display:block}
+.phbar{height:10px;border-radius:5px;background:rgba(255,255,255,.28);margin:10px 0 6px;overflow:hidden}
+.phbar i{display:block;height:100%;background:#fff;border-radius:5px}
+.phmeta{display:flex;justify-content:space-between;font:600 11px/1 var(--f);opacity:.88}
+.ppath{position:relative;padding:8px 0 30px}
+.pphase{margin:28px 0 6px;background:var(--pc);color:#fff;border-radius:22px;padding:14px 18px 16px;display:flex;flex-direction:column;gap:2px}
+.pphase span{font:700 10.5px/1.2 var(--f);letter-spacing:.12em;text-transform:uppercase;opacity:.85}
+.pphase b{font-family:"Karantina","Anton",sans-serif;font-weight:700;font-size:42px;line-height:.9;text-transform:uppercase;display:flex;align-items:center;gap:6px}
+.pphase em{font-style:normal;font-size:13px;line-height:1.35;opacity:.92}
+.pfire{width:28px;height:28px;color:#FFB020;display:block}
+.pweek{display:flex;align-items:center;gap:10px;margin:22px 0 4px;color:#9A908E;font:700 10.5px/1 var(--f);letter-spacing:.12em;text-transform:uppercase}
+.pweek::before,.pweek::after{content:"";flex:1;height:2px;background:#EEE8E7;border-radius:1px}
+.prow{position:relative;height:100px}
+.prow>*{position:absolute;left:calc(50% + var(--x))}
+.pnode{top:10px;width:72px;height:66px;margin-left:-36px;border:0;border-radius:50%;background:var(--pc);color:#fff;box-shadow:0 7px 0 color-mix(in srgb,var(--pc) 62%,#000);display:grid;place-items:center;padding:0;z-index:3;transition:transform .08s,box-shadow .08s}
+.pnode:active{transform:translateY(5px);box-shadow:0 2px 0 color-mix(in srgb,var(--pc) 62%,#000)}
+.pface{width:30px;height:30px;display:block}.pface svg{width:100%;height:100%;display:block}
+.pnode.boss{width:84px;height:76px;margin-left:-42px;top:4px}.pnode.boss .pface{width:36px;height:36px}
+.pnode.locked{background:#E6E0DF;color:#B4ABA9;box-shadow:0 7px 0 #CFC6C4}
+.pnode.missed,.pnode.skip{background:#F6F2F1;color:#C9C0BE;box-shadow:0 7px 0 #E3DCDA;outline:3px dashed #E3DCDA;outline-offset:-3px}
+.pnode.part{opacity:.72}
+.pnode.current{transform:scale(1.1)}
+.pnode.current:active{transform:scale(1.1) translateY(5px)}
+.pring{position:absolute;inset:-11px;border-radius:50%;border:5px solid var(--pc);opacity:.3;animation:pring 1.6s ease-in-out infinite}
+@keyframes pring{50%{transform:scale(1.06);opacity:.15}}
+.pstart{position:absolute;top:-44px;left:50%;transform:translateX(-50%);background:#fff;color:var(--pc);border:2px solid #E6E0DF;border-radius:12px;padding:7px 11px;font:800 12px/1 var(--f);letter-spacing:.08em;white-space:nowrap;animation:pbob 1.4s ease-in-out infinite}
+.pstart::after{content:"";position:absolute;left:50%;bottom:-7px;width:10px;height:10px;background:#fff;border-right:2px solid #E6E0DF;border-bottom:2px solid #E6E0DF;transform:translateX(-50%) rotate(45deg)}
+@keyframes pbob{50%{transform:translateX(-50%) translateY(-4px)}}
+.pstars{top:82px;width:54px;margin-left:-27px;display:flex;justify-content:center;gap:2px;z-index:3}
+.pstars i{width:14px;height:14px;color:#E3DCDA;display:block}.pstars i.on{color:#FFC531}
+.plabel{display:none}
+.prow.iscur .plabel{display:block;top:88px;width:200px;margin-left:-100px;text-align:center;font:700 11px/1.2 var(--f);color:#6E6564}
+.pchest{top:16px;width:66px;height:56px;margin-left:-33px;border:0;background:none;padding:0;color:#C9C0BE}
+.pchest svg{width:100%;height:100%;display:block;filter:drop-shadow(0 4px 0 rgba(0,0,0,.12))}
+.pchest.open{color:#FFB020}
+.pghost{top:-2px;margin-left:34px;display:flex;flex-direction:column;align-items:center;gap:2px;z-index:4}
+.pghost .hd{box-shadow:0 0 0 2px #fff,0 3px 8px rgba(0,0,0,.18)}
+.pghost em{font:700 9.5px/1 var(--f);font-style:normal;background:#141010;color:#fff;border-radius:6px;padding:3px 5px}
+.plek{bottom:-26px;width:132px;display:flex;flex-direction:column;align-items:center;gap:6px;z-index:2;pointer-events:none}
+.plek.l{left:auto;right:calc(50% - var(--x) + 50px)}
+.plek.r{left:calc(50% + var(--x) + 50px)}
+.plek img{height:210px;width:auto;display:block}
+.psay{background:#141010;color:#fff;border-radius:14px;padding:8px 10px;font:500 11.5px/1.35 var(--f);width:150px;position:relative}
+.psay b{display:block;color:#FF5A4F;font:800 9.5px/1.2 var(--f);letter-spacing:.12em;text-transform:uppercase;margin-bottom:2px}
+.prow.iscur{margin-top:150px}
+.pend{display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;margin-top:36px}
+.pend img{height:150px;width:auto}
+.pend b{font-family:"Karantina","Anton",sans-serif;font-weight:700;font-size:40px;line-height:.9;text-transform:uppercase}
+.pend span{font-size:13px;color:#6E6564;max-width:260px}
 </style>
 </head>
 <body>
@@ -792,9 +851,10 @@ html[data-theme=red] .app.is-social .sbig,html[data-theme=red] .app.is-social .s
 </nav></div>
 <div class="sheet" id="sheet" hidden><div class="in" id="sheetIn"></div></div>
 <div class="toast" id="toast" hidden></div>
-<script src="plan.js?v=19"></script>
-<script src="locker.js?v=19"></script>
-<script src="social.js?v=19"></script>
-<script src="app.js?v=19"></script>
+<script src="plan.js?v=20"></script>
+<script src="locker.js?v=20"></script>
+<script src="social.js?v=20"></script>
+<script src="path.js?v=20"></script>
+<script src="app.js?v=20"></script>
 </body>
 </html>

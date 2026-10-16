@@ -277,12 +277,15 @@ function render(){
   let html;
   if (tab === "dag"){
     html = homeMode === "locker" ? viewLocker()
+      : homeMode === "path" ? hubBar() + viewPath()
       : homeMode === "schedule" ? hubBar() + viewSchedule()
       : homeMode === "plan" ? hubBar() + viewPlan()
       : homeMode === "tests" ? hubBar() + viewTests()
       : viewHome();
   } else html = tab === "community" ? viewCommunity() : tab === "feed" ? viewFeed() : tab === "search" ? viewSearch() : viewYou();
   app.innerHTML = html;
+  app.classList.toggle("is-path", tab === "dag" && homeMode === "path");
+  if (tab === "dag" && homeMode === "path") requestAnimationFrame(pathAfter);
 
 }
 
@@ -318,7 +321,7 @@ function viewHome(){
     <p class="h3say"><b>Report says:</b> ${lines.map(esc).join(" ")}</p>
     ${topBar(false, nu)}
     <div class="card2 h3today">
-      <div class="today2-h"><button class="hubopen" data-hub="schedule"><h2>Today</h2><i>Schedule ›</i></button><span>Tomorrow · ${tItems.length ? tItems.map(it => esc(SESS[it.id].title.split(" · ")[0])).join(" + ") : "Rest"}</span></div>
+      <div class="today2-h"><button class="hubopen" data-hub="path"><h2>Today</h2><i>Path ›</i></button><span>Tomorrow · ${tItems.length ? tItems.map(it => esc(SESS[it.id].title.split(" · ")[0])).join(" + ") : "Rest"}</span></div>
       ${items.length ? items.map(it => { const s2 = SESS[it.id], k = key+"_"+it.slot;
         return `<button class="r2 kind-${s2.kind}" data-open="${k}|${it.id}"><span class="t2">${esc(slotTime(it))}</span><span class="n2">${esc(s2.title)}<small>${esc(s2.dur)} · ${esc(s2.sub)}</small></span>${statusChip(k) || `<span class="go2">›</span>`}</button>`; }).join("")
         : `<div class="r2"><span class="t2">All day</span><span class="n2">Rest day<small>Walk, eat, sleep 8 hours</small></span><span></span></div>`}
@@ -331,7 +334,7 @@ function topBar(inLocker, nu){
 }
 
 function hubBar(){
-  const t = [["schedule","Schedule"],["plan","Plan"],["tests","Tests"]];
+  const t = [["path","Path"],["schedule","Schedule"],["plan","Plan"],["tests","Tests"]];
   return `<div class="hubbar"><button class="hubback" data-act="hubback" aria-label="Back to Today">‹ Today</button><div class="hubseg">${t.map(x => `<button data-hub="${x[0]}" aria-pressed="${homeMode === x[0]}">${x[1]}</button>`).join("")}</div></div>`;
 }
 
@@ -568,7 +571,7 @@ async function openSettings(){
     </div>
 
     <div class="block">
-      <h3>App<small>v19 · PWA</small></h3>
+      <h3>App<small>v20 · PWA</small></h3>
       <p class="verdict-l" style="text-align:left;max-width:none;margin:6px 0 12px">${isStandalone() ? "Running from your Home Screen." : "Tip: Share → Add to Home Screen for full-screen and reminders."}<br><small style="opacity:.6">Screen ${(window.__vp||{}).screen} · view ${(window.__vp||{}).inner} · inset ${(window.__vp||{}).envB} · gap ${(window.__vp||{}).gap}</small></p>
     </div>`);
 }
@@ -738,7 +741,8 @@ document.addEventListener("click", async e => {
   else if (act === "pushon"){ t.disabled = true; await enablePush(); openSettings(); }
   else if (act === "checkin"){ startCheckin(); }
   else if (act === "hubback"){ homeMode = "today"; render(); window.scrollTo(0,0); }
-  else if (t.dataset.hub){ homeMode = t.dataset.hub; if (homeMode === "schedule") schedDate = new Date(); render(); window.scrollTo(0,0); }
+  else if (t.dataset.hub){ homeMode = t.dataset.hub; if (homeMode === "schedule") schedDate = new Date(); if (homeMode === "path") pathScrollTo = true; window.scrollTo(0,0); render(); }
+  else if (pathClick(t)){ }
   else if (socialClick(t)){ }
   else if (act === "locker"){ homeMode = tab === "dag" && homeMode === "locker" ? "today" : "locker"; tab = "dag"; closeSheetQuiet(); render(); window.scrollTo(0,0); }
   else if (act === "replayintro"){ document.getElementById("sheet").hidden = true; render(); playMoment("intro"); }
