@@ -9,6 +9,22 @@ const PROGRAM = {
   gym: "Nak Muay CPH",
   blurb: "26 weeks. Explosive first, then the gas tank.",
 };
+/* a member's own onboarding (demo) can swap in their coach and program name */
+if (window.SWOLE_PROFILE && window.SWOLE_PROFILE.coach){
+  const P = window.SWOLE_PROFILE;
+  PROGRAM.trainer = P.coach; PROGRAM.by = (typeof CAST !== "undefined" && CAST[P.coach]) ? CAST[P.coach].name : PROGRAM.by;
+  if (P.program) PROGRAM.name = P.program;
+}
+const COACH_SAYS = {
+  elin: {test:"Day one energy! Let's see what you've got.", build:"You're on fire. One more rep than last week!", deload:"Recovery week, superstar. Rest is training too.", retest:"Retest time. Show me that glow-up!"},
+  dale: {test:"First we measure, then we sweat. Sauna after.", build:"Steady work. I'll have the towel ready.", deload:"Easy week. Sit in the heat and breathe.", retest:"Let's see how far you've come, my friend."},
+  fred: {test:"Baseline first. Then we get sharp.", build:"Good tempo. Keep the feet light.", deload:"Lighter week. Stay loose, stay ready.", retest:"Test day. Play it like a final."},
+};
+function coachLine(phKey){
+  if (PROGRAM.trainer === "lek") return LEK_SAYS[phKey] || "";
+  const c = COACH_SAYS[PROGRAM.trainer]; if (!c) return "";
+  return /^d|jul/.test(phKey) ? c.deload : (phKey === "test" ? c.test : /rt|end/.test(phKey) ? c.retest : c.build);
+}
 const PATH_SKIP = new Set(["mobil"]);          /* optional sessions stay off the path */
 const PCOLOR = { test:"#141010", f1:"#FF3B2F", d1:"#6E6564", f2:"#FF3B2F", jul:"#2E7D4F", rt1:"#141010", f3:"#FF3B2F", d2:"#6E6564", f4:"#FF3B2F", d3:"#141010", f5:"#FF3B2F", end:"#141010" };
 const LEK_SAYS = {
@@ -102,7 +118,7 @@ function viewPath(){
     const starRow = (n.state === "done" || n.state === "part") ? `<span class="pstars">${[0,1,2].map(s => `<i class="${s < n.stars ? "on" : ""}">${PICON.star}</i>`).join("")}</span>` : "";
     const g = ghosts[i] ? `<span class="pghost" title="${esc(CAST[ghosts[i]].name)} is here">${head(ghosts[i], 30)}<em>${esc(CAST[ghosts[i]].name)}</em></span>` : "";
     const bubble = i === cur ? `<span class="pstart">${iso(n.d) === iso(new Date()) ? "TODAY" : "START"}</span>` : "";
-    const lek = i === cur ? `<div class="plek ${lekSide}"><div class="psay"><b>Kru Lek</b>${esc(LEK_SAYS[n.ph.key] || "")}</div><img src="${castImg("lek")}" alt="Kru Lek"></div>` : "";
+    const lek = i === cur ? `<div class="plek ${lekSide}"><div class="psay"><b>${esc(PROGRAM.by)}</b>${esc(coachLine(n.ph.key))}</div><img src="${castImg(PROGRAM.trainer)}" alt="${esc(PROGRAM.by)}"></div>` : "";
     html += `<div class="prow ${i === cur ? "iscur" : ""}" style="--x:${x}px" ${i === cur ? 'id="pcur"' : ""}>${lek}
       <button class="pnode ${n.state} ${boss ? "boss" : ""}" style="--pc:${PCOLOR[n.ph.key] === "#6E6564" ? "#FF3B2F" : (PCOLOR[n.ph.key] || "#FF3B2F")}" data-pnode="${n.key}|${n.id}" aria-label="${esc(SESS[n.id].title)}, ${DAY[dow(n.d)]} ${fmt(n.d)}">
         ${bubble}<span class="pface">${icon}</span>${n.state === "current" ? `<span class="pring"></span>` : ""}</button>
@@ -118,7 +134,7 @@ function viewPath(){
     <div class="phmeta"><span>${done}/${sess.length} sessions</span><span>${pct}% of the program</span></div>
   </div>
   <div class="ppath">${html}
-    <div class="pend"><img src="${POSE ? POSE("arms") : ""}" alt="" onerror="this.remove()"><b>Graduation</b><span>Finish the program to unlock Kru Lek's mongkol in your Locker.</span></div>
+    <div class="pend"><img src="${POSE ? POSE("arms") : ""}" alt="" onerror="this.remove()"><b>Graduation</b><span>Finish the program to unlock ${esc(PROGRAM.by)}'s signature item in your Locker.</span></div>
   </div>`;
 }
 
@@ -147,7 +163,7 @@ function pathClick(t){
   const ch = t.closest("[data-pchest]");
   if (ch){
     const w = Number(ch.dataset.pchest);
-    if (ch.classList.contains("open")) toast(`Week ${w} chest opened: +50 XP from Kru Lek.`);
+    if (ch.classList.contains("open")) toast(`Week ${w} chest opened: +50 XP from ${PROGRAM.by}.`);
     else toast(`Finish every session in week ${w} to open this chest.`);
     return true;
   }

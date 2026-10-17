@@ -1,6 +1,8 @@
 /* ============ DATES ============ */
 const START = window.SWOLE_DEMO
-  ? (() => { const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate() - (d.getDay()+6)%7 - 28); return d; })()   // demo: always in week 5
+  ? (() => { const d = new Date(); d.setHours(0,0,0,0); let ff = false; try { ff = JSON.parse(localStorage.getItem("swole:demo:ff")) === true; } catch(e){}
+      const dw = (d.getDay()+6)%7;
+      d.setDate(ff ? d.getDate() - dw - 28 : d.getDate() + (7 - dw) % 7); return d; })()   // demo: a new member starts next Monday; fast-forward puts you in week 5
   : new Date(2026, 9, 19);
 const DAY = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 const DAYL = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
