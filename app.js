@@ -582,7 +582,7 @@ async function openSettings(){
     </div>`}
 
     <div class="block">
-      <h3>App<small>v23 · PWA</small></h3>
+      <h3>App<small>v26 · PWA</small></h3>
       <p class="verdict-l" style="text-align:left;max-width:none;margin:6px 0 12px">${isStandalone() ? "Running from your Home Screen." : "Tip: Share → Add to Home Screen for full-screen and reminders."}<br><small style="opacity:.6">Screen ${(window.__vp||{}).screen} · view ${(window.__vp||{}).inner} · inset ${(window.__vp||{}).envB} · gap ${(window.__vp||{}).gap}</small></p>
     </div>`);
 }
@@ -853,4 +853,8 @@ if (!LS.get("swole:introSeen", false)){ LS.set("swole:introSeen", true); playMom
 setTimeout(preloadMoments, 2500);
 if ("serviceWorker" in navigator){ navigator.serviceWorker.register("sw.js").catch(() => {}); }
 sbBoot();
-loadAll().then(render);
+loadAll().then(() => {
+  const p = S.settings && S.settings.profile;
+  if (!window.SWOLE_DEMO && !window.SWOLE_PROFILE && p && p.onboarded && !sessionStorage.getItem("swole:profReload")){ sessionStorage.setItem("swole:profReload", "1"); location.reload(); return; }
+  render();
+});

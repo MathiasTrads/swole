@@ -1,9 +1,23 @@
+/* ============ MEMBER PROFILE (real app) ============
+   A member who went through sign-up has settings.profile (synced to Supabase as an entry).
+   It sets their coach, Swole, program name and start date. Mathias's own account has none. */
+if (!window.SWOLE_DEMO){
+  try {
+    const st = JSON.parse(localStorage.getItem("swole:data:settings") || "{}");
+    if (st.profile && st.profile.onboarded) window.SWOLE_PROFILE = st.profile;
+    const has = k => { try { return Object.keys(JSON.parse(localStorage.getItem(k) || "{}")).length > 0; } catch(e){ return false; } };
+    /* a brand-new visitor goes straight into sign-up: hold the intro until it's done */
+    if (!window.SWOLE_PROFILE && !has("swole:data:sessions") && !has("swole:data:checkins")) localStorage.setItem("swole:introSeen", "true");
+  } catch(e){}
+}
 /* ============ DATES ============ */
 const START = window.SWOLE_DEMO
   ? (() => { const d = new Date(); d.setHours(0,0,0,0); let ff = false; try { ff = JSON.parse(localStorage.getItem("swole:demo:ff")) === true; } catch(e){}
       const dw = (d.getDay()+6)%7;
       d.setDate(ff ? d.getDate() - dw - 28 : d.getDate() + (7 - dw) % 7); return d; })()   // demo: a new member starts next Monday; fast-forward puts you in week 5
-  : new Date(2026, 9, 19);
+  : (window.SWOLE_PROFILE && window.SWOLE_PROFILE.start)
+    ? (([y, m, d]) => new Date(y, m - 1, d))(window.SWOLE_PROFILE.start.split("-").map(Number))   // a member's own start (a Monday)
+    : new Date(2026, 9, 19);
 const DAY = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 const DAYL = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
 const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -117,7 +131,7 @@ const KIND_LABEL = {strength:"Strength", conditioning:"Conditioning", mobility:"
 function plannedFor(d){
   const out = [], w = weekNo(d), dw = dow(d);
   if (w >= 1 && w <= 26){ const ph = phaseOf(w); const am = TEMPLATES[ph.tpl][dw]; if (am) out.push({slot:"am", id:am}); }
-  if (MT[dw]) out.push({slot:"pm", id:MT[dw]});
+  if (MT[dw] && !window.SWOLE_PROFILE) out.push({slot:"pm", id:MT[dw]});   // the 18:00 Muay Thai classes are Mathias's own schedule
   return out;
 }
 const slotTime = it => it.slot === "am" ? "Morning" : (it.id === "mtSelf" ? "Flexible" : "18:00");

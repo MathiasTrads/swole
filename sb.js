@@ -224,6 +224,6 @@ function sbSettingsBlock(){
 function sbBoot(){
   if (window.SWOLE_DEMO) return;
   sbFromHash();
-  if (!SB.session && !sbLS.get("swole:sb:skip", false)) setTimeout(() => { if (!SB.session) openAuth("email"); }, 1300);
+  if (!SB.session && !sbLS.get("swole:sb:skip", false)) setTimeout(() => { if (!SB.session && !document.documentElement.classList.contains("ob-open")) openAuth("email"); }, 1300);
 }
 window.addEventListener("online", () => sbFlush());

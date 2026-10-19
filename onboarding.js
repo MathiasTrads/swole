@@ -1,7 +1,11 @@
-/* ============ ONBOARDING (demo prototype) ============
+/* ============ ONBOARDING ============
+   Demo (/demo/): scripted, nothing leaves the phone.
+   Real app: real email code (Supabase), and the finished profile is saved as settings.profile,
+   which syncs to Supabase like every other entry.
    New member journey: welcome → email → code → goal → AI intake (scripted)
    → plan reveal → create your Swole (photos / build / later) → pick a coach
-   → invite a buddy → done. Everything is local; nothing is sent anywhere. */
+   → invite a buddy → done. */
+const OB_DEMO = !!window.SWOLE_DEMO;
 const OB_GOALS = [
   {cat:"strength",  label:"Strength",  items:["Do my first pull-up","Deadlift my body weight","20 push-ups in a row"]},
   {cat:"endurance", label:"Endurance", items:["Run 5 km without stopping","10 km under an hour","Last 5 hard rounds of sparring"]},
@@ -218,8 +222,9 @@ function obView(st){
   if (st === "code") return `
     <h2 class="obh">Check your inbox</h2><p class="obp">We sent a code to <b>${esc(OB.email)}</b>.</p>
     <input class="obinput obcode" id="obCode" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="123456">
-    <p class="obnote">Demo: any 6 digits work.</p>
-    <button class="pill wide" data-ob="code">Continue</button>`;
+    ${OB_DEMO ? `<p class="obnote">Demo: any 6 digits work.</p>` : `<p class="obnote">Can't find it? Look in spam. It can take a minute.</p>`}
+    <button class="pill wide" data-ob="code">Continue</button>
+    ${OB_DEMO ? "" : `<button class="oblink" data-ob="resend">Send a new code</button>`}`;
   if (st === "goal") return `
     <h2 class="obh">What do you want to achieve?</h2><p class="obp">Pick one to start. You can add more goals later.</p>
     ${OB_GOALS.map(g => `<div class="obcat"><span>${esc(g.label)}</span><div class="obchips">${g.items.map(it => `<button class="obchip ${OB.goal && OB.goal.label === it ? "on" : ""}" data-ob="goal:${g.cat}|${esc(it)}">${esc(it)}</button>`).join("")}</div></div>`).join("")}
@@ -247,7 +252,7 @@ function obView(st){
       <div class="obphases">${P.phases.map(p => `<div class="obph" style="flex:${p.weeks}"><b>${esc(p.name)}</b><span>${p.weeks} wk</span></div>`).join("")}</div>
       <div class="obcard"><p class="obeye">Week 1</p>${P.week1.map(s => `<div class="obday"><i>${s.day}</i><span>${esc(s.what)}</span></div>`).join("")}</div>
       ${P.notes.map(n => `<p class="obnote">${esc(n)}</p>`).join("")}
-      <p class="obnote">Demo: the plan is built from a small library of training blocks. In the real app an AI tailors it within safe limits.</p>
+      <p class="obnote">${OB_DEMO ? "Demo: the plan is built from a small library of training blocks. In the real app an AI tailors it within safe limits." : "Built from proven training blocks for your goal. Your coach adjusts it as you go."}</p>
       <button class="pill wide" data-ob="go:swole">Looks good</button>`;
   }
   if (st === "swole"){
@@ -256,7 +261,7 @@ function obView(st){
     <h2 class="obh">Pick your Swole</h2><p class="obp">Pick the one that feels most like you.</p>
     <div class="obroster">${ROSTER.map((f, i) => `<button class="obfighter ${OB.fighter === f.id ? "on" : ""}" data-ob="fighter:${f.id}" aria-pressed="${OB.fighter === f.id}" aria-label="Swole ${i + 1}"><img src="${f.img}" alt=""></button>`).join("")}</div>
     <button class="pill wide" data-ob="go:coach" ${F ? "" : "disabled"}>${F ? "This is my Swole" : "Pick a Swole"}</button>
-    <button class="oblink" data-ob="go:swole:photo">Make my Swole from photos</button>
+    ${OB_DEMO ? `<button class="oblink" data-ob="go:swole:photo">Make my Swole from photos</button>` : ""}
     <button class="oblink" data-ob="go:swole:build">Build my Swole</button>`;
   }
   if (st === "swole:photo"){
@@ -291,8 +296,8 @@ function obView(st){
     return `<h2 class="obh">Your Swole is on its way</h2>
       <p class="obp">We'll swap it in the moment it's ready. Until then you train with the closest ready-made Swole.</p>
       <div class="obpair"><figure><div class="obavatar">${avatarSVG(OB.av, 120)}</div><figcaption>Your Swole</figcaption></figure><span aria-hidden="true">→</span><figure><img src="${stand.img}" alt="Ready-made Swole"><figcaption>For now</figcaption></figure></div>
-      <p class="obnote">Demo: nothing is sent. In the real app our server draws your Swole with the same recipe as the ready-made ones.</p>
-      <details class="obprompt"><summary>Demo: drawing prompt</summary><p id="obPrompt">${esc(swolePrompt(OB.av))}</p><button class="oblink" data-ob="copyprompt">Copy prompt</button></details>
+      ${OB_DEMO ? `<p class="obnote">Demo: nothing is sent. In the real app our server draws your Swole with the same recipe as the ready-made ones.</p>
+      <details class="obprompt"><summary>Demo: drawing prompt</summary><p id="obPrompt">${esc(swolePrompt(OB.av))}</p><button class="oblink" data-ob="copyprompt">Copy prompt</button></details>` : ""}
       <button class="pill wide" data-ob="go:coach">Continue</button>`;
   }
   if (st === "coach") return `
@@ -311,7 +316,7 @@ function obView(st){
     return `<h1 class="obbig">You're in${name ? `, ${name}` : ""}.</h1>${av}
       <div class="obsum"><span>${esc(OB.goal.label)}</span><span>${OB.plan.weeks} weeks · ${OB.plan.days}× a week</span><span>Coach: ${esc(CAST[OB.coach || "lek"].name)}</span></div>
       <button class="pill wide" data-ob="finish">Start week 1</button>
-      <button class="oblink" data-ob="finishff">Demo: fast-forward 4 weeks</button>`;
+      ${OB_DEMO ? `<button class="oblink" data-ob="finishff">Demo: fast-forward 4 weeks</button>` : ""}`;
   }
   return "";
 }
@@ -327,15 +332,28 @@ function obBack(){
   const s = OB.step;
   if (s === "intake" && OB.qi > 0){ OB.qi--; obRender(); return; }
   const prev = {email:"welcome", code:"email", goal:"code", intake:"goal", plan:"intake", swole:"plan", "swole:photo":"swole", "swole:build":"swole", "swole:drawing":"swole:build", coach:"swole", invite:"coach"}[s];
+  if (!OB_DEMO && SB.session && (prev === "code" || prev === "email")) return;
   if (prev){ if (prev === "intake") OB.qi = OB_Q.length - 1; obGo(prev); }
 }
 function obNextQ(){ OB.qi++; if (OB.qi >= OB_Q.length){ obGo("building"); } else obRender(); }
 function obFinish(ff){
   const P = {name: OB.a.name || "", email: OB.email, goal: OB.goal, program: OB.plan.title, coach: OB.coach || "lek", answers: OB.a, plan: OB.plan, avatar: OB.avMode === "build" ? OB.av : null, avatarPrompt: OB.avMode === "build" ? swolePrompt(OB.av) : null, avatarStatus: OB.avMode === "build" ? "drawing" : null, style: OB.avMode === "photo" ? OB.style : null, fighter: (OB.avMode === "fighter" || OB.avMode === "build") ? OB.fighter : null};
+  if (!OB_DEMO) return obFinishReal(P);
   demoPut("swole:demo:profile", P);
   demoPut("swole:demo:onboarded", true);
   demoPut("swole:introSeen", false);
   if (ff) demoPut("swole:demo:ff", true);
+  location.reload();
+}
+/* the member's plan starts on Monday (today, if today is a Monday) */
+function obStartDate(){ const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate() + (7 - (d.getDay() + 6) % 7) % 7); return iso(d); }
+async function obFinishReal(P){
+  const btn = document.querySelector('#onb [data-ob="finish"]'); if (btn){ btn.disabled = true; btn.textContent = "Saving…"; }
+  P.email = (SB.session && SB.session.user.email) || P.email;
+  P.onboarded = true; P.start = obStartDate(); P.createdAt = new Date().toISOString(); P.v = 1;
+  await save("settings", "profile", P);
+  LS.set("swole:introSeen", false);
+  try { await Promise.race([sbFlush(), new Promise(r => setTimeout(r, 5000))]); } catch(e){}
   location.reload();
 }
 document.addEventListener("click", async e => {
@@ -343,8 +361,22 @@ document.addEventListener("click", async e => {
   const a = b.dataset.ob;
   if (a === "back") return obBack();
   if (a.startsWith("go:")) return obGo(a.slice(3));
-  if (a === "email"){ const v = (document.getElementById("obEmail").value || "").trim(); if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)){ toast("That doesn't look like an email."); return; } OB.email = v; return obGo("code"); }
-  if (a === "code"){ const v = (document.getElementById("obCode").value || "").replace(/\D/g, ""); if (v.length < 6){ toast("Type the 6-digit code."); return; } return obGo("goal"); }
+  if (a === "email"){
+    const v = (document.getElementById("obEmail").value || "").trim().toLowerCase(); if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)){ toast("That doesn't look like an email."); return; }
+    OB.email = v;
+    if (!OB_DEMO){ b.disabled = true; b.textContent = "Sending…"; try { await sbSendCode(v); } catch(err){ b.disabled = false; b.textContent = "Send me a code"; toast(sbErrText(err)); return; } }
+    return obGo("code");
+  }
+  if (a === "resend"){ try { await sbSendCode(OB.email); toast("New code sent."); } catch(err){ toast(sbErrText(err)); } return; }
+  if (a === "code"){
+    const v = (document.getElementById("obCode").value || "").replace(/\D/g, ""); if (v.length < 6){ toast("Type the code from the email."); return; }
+    if (OB_DEMO) return obGo("goal");
+    b.disabled = true; b.textContent = "Checking…";
+    try { await sbVerify(OB.email, v); } catch(err){ b.disabled = false; b.textContent = "Continue"; toast(sbErrText(err)); return; }
+    const p = S.settings && S.settings.profile;
+    if (p && p.onboarded){ toast("Welcome back."); setTimeout(() => location.reload(), 600); return; }   // an existing member on a new phone
+    return obGo("goal");
+  }
   if (a.startsWith("goal:")){ const [cat, label] = a.slice(5).split("|"); OB.goal = {cat, label}; OB.qi = 0; return obGo("intake"); }
   if (a === "own"){ const v = (document.getElementById("obOwn").value || "").trim(); if (!v){ toast("Write your goal first."); return; } OB.goal = {cat:"health", label:v}; OB.qi = 0; return obGo("intake"); }
   if (a === "ans"){
@@ -397,5 +429,11 @@ document.addEventListener("keydown", e => {
   if (e.key !== "Enter" || !document.getElementById("onb")) return;
   const btn = document.querySelector("#onb .obsend, #onb .pill.wide:not([disabled])"); if (btn) btn.click();
 });
-function startOnboarding(){ OB = obInit(); document.documentElement.classList.add("ob-open"); obRender(); }
-if (window.SWOLE_DEMO && !demoGet("swole:demo:onboarded")) startOnboarding();
+function startOnboarding(step){ OB = obInit(); if (step) OB.step = step; document.documentElement.classList.add("ob-open"); obRender(); }
+if (OB_DEMO){ if (!demoGet("swole:demo:onboarded")) startOnboarding(); }
+else {
+  /* real app: someone with no profile and no training on this phone is new → sign-up.
+     Mathias's own account has training data, so he never sees it. */
+  const hasData = Object.keys(S.sessions || {}).length || Object.keys(S.checkins || {}).length;
+  if (!(S.settings && S.settings.profile && S.settings.profile.onboarded) && !hasData) startOnboarding(SB.session ? "goal" : "welcome");
+}
