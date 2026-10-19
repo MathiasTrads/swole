@@ -195,11 +195,16 @@ function swoleSVG(mood){
 }
 
 /* ============ AVATAR (uploaded art) ============ */
-const BUILTIN = {src:"media/cut-default.webp", type:"image/webp", cut:true};
+/* roster: the Swole picked in onboarding (demo). Every avatar is "a Swole". null = the original Swole art. */
+const FIGHTER = (window.SWOLE_PROFILE && window.SWOLE_PROFILE.fighter && window.SWOLE_PROFILE.fighter !== "swole") ? window.SWOLE_PROFILE.fighter : null;
+window.SWOLE_FIGHTER = FIGHTER;
+const RF = m => `media/roster/${FIGHTER}/${m}.webp`;
+const CUTSRC = m => FIGHTER ? RF(m) : `media/cut-${m}.webp`;
+const BUILTIN = {src:CUTSRC("default"), type:"image/webp", cut:true};
 const BUILTIN_SLOT = {
-  klar:{src:"media/cut-ready.webp", type:"image/webp", cut:true},
-  skru:{src:"media/cut-bench.webp", type:"image/webp", cut:true},
-  rest:{src:"media/cut-recover.webp", type:"image/webp", cut:true},
+  klar:{src:CUTSRC("ready"), type:"image/webp", cut:true},
+  skru:{src:CUTSRC("bench"), type:"image/webp", cut:true},
+  rest:{src:CUTSRC("recover"), type:"image/webp", cut:true},
 };
 /* v11 character pack */
 const MOMENT = {
@@ -209,9 +214,16 @@ const MOMENT = {
   pose:{src:"media/m-pose.webp", ms:5100, word:"SWOLE", sub:""},
   shadow:{src:"media/m-shadow.webp", ms:6100, word:"FINISHED", sub:"Intervals done. Log your max HR."},
 };
-const EMO = n => `media/emote/${n}.webp`;
-const POSE = n => `media/pose/${n}.webp`;
+const POSE_MOOD = {arms:"default", flex:"default", point:"default", thumbs:"default", win:"ready", stance:"ready", teep:"ready", kick:"ready", wraps:"ready", kneeup:"ready", bench:"bench", squat:"recover"};
+const EMO = n => FIGHTER ? RF("face") : `media/emote/${n}.webp`;
+const POSE = n => FIGHTER ? RF(POSE_MOOD[n] || "default") : `media/pose/${n}.webp`;
+if (FIGHTER){ // moments are the original Swole's animations: show the picked Swole's still pose instead
+  const MM = {intro:"default", kick:"ready", flex:"default", pose:"ready", shadow:"ready"};
+  for (const k in MOMENT) MOMENT[k].src = RF(MM[k] || "default");
+  MOMENT.intro.word = "LET'S WORK"; MOMENT.intro.sub = "Your Swole for the next weeks. Check in every morning. Swole handles the rest.";
+}
 function artFor(slot){
+  if (FIGHTER) return BUILTIN_SLOT[slot] || BUILTIN;
   const a = (S.settings.avatar) || {};
   if (a[slot] && a[slot].id) return a[slot];
   if (a.std && a.std.id) return a.std;

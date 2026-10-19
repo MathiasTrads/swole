@@ -104,6 +104,7 @@ function equipped(){
   return eq;
 }
 function outfitLook(){   // the render Swole should wear, if an outfit with a render is equipped
+  if (window.SWOLE_FIGHTER) return null;   // outfit renders exist for Swole only (other roster Swoles wear the starter kit)
   const id = equipped().outfit; const it = id && ITEMS.find(i => i.id === id);
   return it && it.look ? it.look : null;
 }
