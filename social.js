@@ -35,17 +35,28 @@ const SOC = {
   toggle(k, id){ const o = SOC.get(k, {}); o[id] = !o[id]; SOC.set(k, o); return o[id]; },
 };
 
-/* ---------- my progress (drives level, flexes and the profile) ---------- */
+/* ---------- my progress (drives the profile and flexes) ----------
+   No XP, levels or ranks: they reward volume and nudge people to overtrain.
+   Progress = where you are in your plan and how closely you followed it. Rest days count as following it. */
 function myStats(){
   const st = lockerStats();
-  const xp = st.checkins * 10 + st.sessions * 25 + st.tests * 15;
-  const level = Math.floor(Math.sqrt(xp / 40)) + 1;
-  const floor = Math.pow(level - 1, 2) * 40, next = Math.pow(level, 2) * 40;
-  const stage = level >= 12 ? "Champion" : level >= 8 ? "Fighter" : level >= 4 ? "Contender" : "Rookie";
   const owned = ITEMS.filter(i => itemState(i, st).open).length;
   // current streak (ending today or yesterday)
   let streak = 0; for (let d = new Date(); ; d = addDays(d, -1)){ if (S.checkins[iso(d)]) streak++; else if (streak || iso(d) !== iso(new Date())) break; }
-  return {...st, xp, level, floor, next, stage, owned, cur: streak};
+  // plan week + how many planned sessions were done so far (today counts once it's done)
+  const wk = Math.min(PLAN_WEEKS, Math.max(0, st.week));
+  let planned = 0, done = 0;
+  const today = new Date();
+  for (let d = new Date(START); d <= today && weekNo(d) <= PLAN_WEEKS; d = addDays(d, 1)){
+    for (const it of plannedFor(d)){
+      const ok = (S.sessions[iso(d)+"_"+it.slot] || {}).status === "done";
+      if (iso(d) === iso(today) && !ok) continue;
+      planned++; if (ok) done++;
+    }
+  }
+  const onPlan = planned ? Math.round(done / planned * 100) : 0;
+  const phase = wk >= 1 ? ((phaseOf(wk) || {}).name || "") : "Starts soon";
+  return {...st, wk, phase, planned, done, onPlan, owned, cur: streak};
 }
 
 /* ---------- mock world ---------- */
@@ -77,7 +88,7 @@ const POSTS = [
   {id: "p5", type: "drop", by: "dale", kind: "Motivation", title: "Heat is a skill", body: "Two minutes longer than you want. Breathe through the nose. Then cold. That's recovery, not a reward.", tint: "#3A2A22", respect: 61},
   {id: "p6", type: "flex", by: "noor", kind: "PR", title: "New PR · 10 km in 46:20", body: "Fastest yet. Sub-45 is coming.", respect: 143},
   {id: "p7", type: "drop", by: "fred", kind: "Program", title: "Zero to court-ready", body: "4 weeks for total beginners: footwork, the bandeja and not running into the glass.", dur: "4 wk", program: {id: "court4", weeks: 4, perWeek: 2}, tint: "#1B2A4A", respect: 77},
-  {id: "p8", type: "flex", by: "jonas", kind: "Level up", title: "Reached level 3 · Rookie", body: "Still can't do a pull-up. Yet.", respect: 39},
+  {id: "p8", type: "flex", by: "jonas", kind: "Week done", title: "Week 3 on plan", body: "Still can't do a pull-up. Yet.", respect: 39},
 ];
 const DIRECTORY = [
   ...Object.keys(CAST).map(id => ({kind: CAST[id].role === "trainer" ? "Trainers" : "People", id, name: CAST[id].name, sub: `@${CAST[id].handle} · ${CAST[id].sport}`})),
@@ -194,7 +205,7 @@ function openFlexComposer(){
   const lastUnlock = ITEMS.filter(i => i.unlock.type !== "start" && itemState(i, st).open).slice(-1)[0];
   const opts = [
     {kind: "Streak", title: `${Math.max(1, m.cur)}-day streak`, body: "Showing up is the whole trick.", img: "media/pose/win.webp"},
-    {kind: "Level up", title: `Level ${m.level} · ${m.stage}`, body: `${m.xp} XP and counting.`},
+    {kind: "On plan", title: `Week ${Math.max(1, m.wk)} of ${PLAN_WEEKS}`, body: m.planned ? `${m.done} of ${m.planned} planned sessions done. Rest days included.` : "Day one. Let's go."},
     {kind: "Fit check", title: "Today's fit", body: "Locker looking right.", img: outfitLook() || "media/pose/stance.webp"},
     ...(lastUnlock ? [{kind: "Unlock", title: `Unlocked ${lastUnlock.name}`, body: RARITY[lastUnlock.rarity].label + " drop.", item: lastUnlock.id}] : []),
   ];
@@ -234,7 +245,7 @@ function searchResults(res, fol){
 /* ============ YOU ============ */
 function viewYou(){
   const m = myStats(), eq = equipped(), vis = SOC.get("visibility", "friends");
-  const pct = Math.round((m.xp - m.floor) / Math.max(1, m.next - m.floor) * 100);
+  const pct = Math.round(Math.max(0, m.wk) / PLAN_WEEKS * 100);
   const shown = Object.values(eq).map(id => ITEMS.find(i => i.id === id)).filter(Boolean);
   const badges = [
     {n: "First check-in", on: m.checkins >= 1}, {n: "7-day streak", on: m.streak >= 7}, {n: "10 sessions", on: m.sessions >= 10},
@@ -247,8 +258,8 @@ function viewYou(){
     <div class="yinfo">
       <span class="eyebrow">@mathias · ${esc(GYM.name)}</span>
       <h1 class="sbig">Mathias</h1>
-      <div class="lvl"><b>Level ${m.level}</b><span>${m.stage}</span></div>
-      <div class="bar"><i style="width:${pct}%"></i></div><small class="mut">${m.xp} XP · ${m.next - m.xp} to level ${m.level + 1}</small>
+      <div class="lvl"><b>${m.wk >= 1 ? `Week ${m.wk} of ${PLAN_WEEKS}` : "Plan starts Monday"}</b><span>${esc(m.phase)}</span></div>
+      <div class="bar"><i style="width:${pct}%"></i></div><small class="mut">${m.planned ? `${m.onPlan} % of planned sessions done` : "Your plan, one week at a time"}</small>
       <div class="pst"><span><b>${m.cur}</b>streak</span><span><b>${m.sessions}</b>sessions</span><span><b>${m.owned}</b>items</span></div>
     </div>
   </section>

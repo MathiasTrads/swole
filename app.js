@@ -208,7 +208,7 @@ const BUILTIN_SLOT = {
 };
 /* v11 character pack */
 const MOMENT = {
-  intro:{src:"media/m-intro.webp", ms:5100, word:"I'M SWOLE", sub:"Your coach for the next 26 weeks. Check in every morning. I'll handle the rest."},
+  intro:{src:"media/m-intro.webp", ms:5100, word:"I'M SWOLE", sub:`Your coach for the next ${PLAN_WEEKS} weeks. Check in every morning. I'll handle the rest.`},
   kick:{src:"media/m-kick.webp", ms:5100, word:"LET'S GO", sub:""},
   flex:{src:"media/m-flex.webp", ms:5100, word:"DONE", sub:"Logged. That's how you get swole."},
   pose:{src:"media/m-pose.webp", ms:5100, word:"SWOLE", sub:""},
@@ -308,7 +308,7 @@ function render(){
 /* ---------- HOME ---------- */
 function viewHome(){
   const d = new Date(), key = iso(d);
-  const w = weekNo(d), ph = w >= 1 && w <= 26 ? phaseOf(w) : null;
+  const w = weekNo(d), ph = w >= 1 && w <= PLAN_WEEKS ? phaseOf(w) : null;
   const ci = S.checkins[key], r = readiness(ci);
   const items = plannedFor(d);
   let word = "Check in", mood = "neutral", slot = "std", lines = [];
@@ -421,14 +421,14 @@ function viewSchedule(){
   let label = "", sub = "", body = "";
   const d = schedDate;
   if (schedMode === "day"){
-    const w = weekNo(d), ph = w >= 1 && w <= 26 ? phaseOf(w) : null;
+    const w = weekNo(d), ph = w >= 1 && w <= PLAN_WEEKS ? phaseOf(w) : null;
     label = `${DAY[dow(d)]} ${fmt(d)}`; sub = ph ? `Week ${w} · ${ph.name}` : d.getFullYear();
     const items = plannedFor(d), ci = S.checkins[iso(d)], r = readiness(ci);
     body = `${r ? `<div class="banner ${r.level === "g" ? "g" : r.level}">Check-in: ${LEVEL[r.level].word}. ${esc(LEVEL[r.level].line)}</div>` : ""}
       <div class="list">${items.length ? items.map(it => sessCard(d,it)).join("") : `<div class="empty">Rest day.</div>`}</div>`;
   } else if (schedMode === "week"){
-    const base = addDays(d, -dow(d)), w = weekNo(base), ph = w >= 1 && w <= 26 ? phaseOf(w) : null;
-    label = `${fmt(base)} – ${fmt(addDays(base,6))}`; sub = ph ? `Week ${w} of 26 · ${ph.name}` : w < 1 ? "Before start" : "After the plan";
+    const base = addDays(d, -dow(d)), w = weekNo(base), ph = w >= 1 && w <= PLAN_WEEKS ? phaseOf(w) : null;
+    label = `${fmt(base)} – ${fmt(addDays(base,6))}`; sub = ph ? `Week ${w} of ${PLAN_WEEKS} · ${ph.name}` : w < 1 ? "Before start" : "After the plan";
     let rows = "";
     for (let i = 0; i < 7; i++){
       const dd = addDays(base,i), items = plannedFor(dd), r = readiness(S.checkins[iso(dd)]);
@@ -447,7 +447,7 @@ function viewSchedule(){
     for (let n = 1; n <= dim; n++){
       const dd = new Date(d.getFullYear(), d.getMonth(), n), items = plannedFor(dd);
       const allDone = items.length && items.every(it => (S.sessions[iso(dd)+"_"+it.slot] || {}).status === "done");
-      if (dow(dd) === 0){ const ph = weekNo(dd) >= 1 && weekNo(dd) <= 26 ? phaseOf(weekNo(dd)) : null; if (ph && (ph.deload || ["test","rt1","d3","end","jul"].includes(ph.key))) cells += `<div class="wkband">↓ ${esc(ph.name)}</div>`; }
+      if (dow(dd) === 0){ const ph = weekNo(dd) >= 1 && weekNo(dd) <= PLAN_WEEKS ? phaseOf(weekNo(dd)) : null; if (ph && (ph.deload || ["test","rt1","d3","end","jul"].includes(ph.key))) cells += `<div class="wkband">↓ ${esc(ph.name)}</div>`; }
       cells += `<button class="cell ${iso(dd) === iso(new Date()) ? "today" : ""}" data-goday="${iso(dd)}" aria-label="${DAYL[dow(dd)]} ${fmt(dd)}">
         <span class="n"><span>${n}</span>${allDone ? "<em>✓</em>" : ""}</span>
         ${items.map(it => `<span class="bar k-${SESS[it.id].kind} ${(S.sessions[iso(dd)+"_"+it.slot]||{}).status === "done" ? "done" : ""}"></span>`).join("")}
@@ -460,7 +460,7 @@ function viewSchedule(){
     let months = "";
     for (let m = 0; m < 12; m++){
       const f = new Date(startM.getFullYear(), startM.getMonth()+m, 1), dim = new Date(f.getFullYear(), f.getMonth()+1, 0).getDate();
-      const phs = [...new Set(Array.from({length:dim},(_,i)=>{ const w = weekNo(new Date(f.getFullYear(),f.getMonth(),i+1)); return w>=1&&w<=26 ? phaseOf(w).name : null; }).filter(Boolean))];
+      const phs = [...new Set(Array.from({length:dim},(_,i)=>{ const w = weekNo(new Date(f.getFullYear(),f.getMonth(),i+1)); return w>=1&&w<=PLAN_WEEKS ? phaseOf(w).name : null; }).filter(Boolean))];
       let g = "";
       for (let i = 0; i < dow(f); i++) g += `<i class="e"></i>`;
       for (let n = 1; n <= dim; n++){
@@ -502,9 +502,11 @@ function sessCard(d, it){
 function viewPlan(){
   const cw = weekNo(new Date());
   return `
-  <div class="top"><div class="brand">Plan<b>.</b></div><span class="eyebrow">Oct 19 → Apr 18</span></div>
-  <div class="phero"><p>26 weeks. Explosiveness first, then the gas tank. A deload every 4–6 weeks. Retests in weeks 12, 22 and 26.</p><img src="${POSE("arms")}" alt=""></div>
-  <div class="banner n">Phase 2 onwards is provisional. Swole adjusts exercises and loads to your test numbers before each phase starts.</div>
+  <div class="top"><div class="brand">Plan<b>.</b></div><span class="eyebrow">${fmt(START)} → ${fmt(addDays(weekStart(PLAN_WEEKS), 6))}</span></div>
+  ${PLAN_GENERATED ? `<div class="phero"><p>${esc(PROGRAM.name)}. ${PLAN_WEEKS} weeks, ${window.SWOLE_PROFILE.plan.days}× a week, about ${window.SWOLE_PROFILE.plan.mins} min each. An easy week before every new phase, and a checkpoint at the end.</p><img src="${POSE("arms")}" alt=""></div>
+  <div class="banner n">${esc(PROGRAM.by)} adjusts the sessions to your check-ins and checkpoint numbers as you go.</div>`
+  : `<div class="phero"><p>26 weeks. Explosiveness first, then the gas tank. A deload every 4–6 weeks. Retests in weeks 12, 22 and 26.</p><img src="${POSE("arms")}" alt=""></div>
+  <div class="banner n">Phase 2 onwards is provisional. Swole adjusts exercises and loads to your test numbers before each phase starts.</div>`}
   ${PHASES.map(p => {
     const a = weekStart(p.w[0]), b = addDays(weekStart(p.w[1]), 6);
     const cls = cw >= p.w[0] && cw <= p.w[1] ? "now" : cw > p.w[1] ? "past" : "";
@@ -514,7 +516,7 @@ function viewPlan(){
   }).join("")}
   <div class="section"><div class="section-h"><h2>Weekly template</h2></div>
     <div class="list">
-      ${DAY.map((n,i) => { const am = TEMPLATES.base[i], pm = MT[i];
+      ${DAY.map((n,i) => { const am = TEMPLATES.base[i], pm = PLAN_GENERATED ? null : MT[i];
         return `<div class="mini"><i>${n}</i><span class="tt">${am ? esc(SESS[am].title) : "—"}${pm ? ` <span style="color:var(--muted)">+ ${esc(SESS[pm].title.replace("Muay Thai · ","MT "))}</span>` : ""}</span></div>`; }).join("")}
     </div>
   </div>`;
@@ -523,7 +525,7 @@ function viewPlan(){
 /* ---------- TESTS ---------- */
 function viewTests(){
   return `
-  <div class="top"><div class="brand">Tests<b>.</b></div><span class="eyebrow">Weeks 1 · 12 · 22 · 26</span></div>
+  <div class="top"><div class="brand">Tests<b>.</b></div><span class="eyebrow">${PLAN_GENERATED ? `Checkpoint · week ${PLAN_WEEKS}` : "Weeks 1 · 12 · 22 · 26"}</span></div>
   <div class="phero"><p>Enter your numbers after each test. Swole uses them to build the next phases.</p><img src="${POSE("teep")}" alt=""></div>
   <div class="list">${TESTS.map(t => {
     const cur = S.tests[t.id], last = cur && cur.history && cur.history.length ? cur.history[cur.history.length-1] : null;
@@ -582,7 +584,7 @@ async function openSettings(){
     </div>`}
 
     <div class="block">
-      <h3>App<small>v26 · PWA</small></h3>
+      <h3>App<small>v27 · PWA</small></h3>
       <p class="verdict-l" style="text-align:left;max-width:none;margin:6px 0 12px">${isStandalone() ? "Running from your Home Screen." : "Tip: Share → Add to Home Screen for full-screen and reminders."}<br><small style="opacity:.6">Screen ${(window.__vp||{}).screen} · view ${(window.__vp||{}).inner} · inset ${(window.__vp||{}).envB} · gap ${(window.__vp||{}).gap}</small></p>
     </div>`);
 }
@@ -593,7 +595,7 @@ function openSession(key, id){
   const s = SESS[id], date = key.split("_")[0], d = parse(date);
   const r = readiness(S.checkins[date]);
   const log = S.sessions[key] || {};
-  const w = weekNo(d), ph = w >= 1 && w <= 26 ? phaseOf(w) : null;
+  const w = weekNo(d), ph = w >= 1 && w <= PLAN_WEEKS ? phaseOf(w) : null;
   const trainable = s.kind !== "mt";
   let banner = "";
   if (r && trainable){

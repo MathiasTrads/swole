@@ -20,9 +20,12 @@ const COACH_SAYS = {
   dale: {test:"First we measure, then we sweat. Sauna after.", build:"Steady work. I'll have the towel ready.", deload:"Easy week. Sit in the heat and breathe.", retest:"Let's see how far you've come, my friend."},
   fred: {test:"Baseline first. Then we get sharp.", build:"Good tempo. Keep the feet light.", deload:"Lighter week. Stay loose, stay ready.", retest:"Test day. Play it like a final."},
 };
+const LEK_GENERIC = {test:"First we see where you are. No ego, just honest work.", build:"Slow is smooth. Smooth is fast.", deload:"Rest week. You grow when you sleep, not when you sweat.", retest:"Checkpoint. Show me what changed."};
 function coachLine(phKey){
-  if (PROGRAM.trainer === "lek") return LEK_SAYS[phKey] || "";
-  const c = COACH_SAYS[PROGRAM.trainer]; if (!c) return "";
+  const gen = typeof PLAN_GENERATED !== "undefined" && PLAN_GENERATED;
+  if (PROGRAM.trainer === "lek" && !gen) return LEK_SAYS[phKey] || "";
+  const c = PROGRAM.trainer === "lek" ? LEK_GENERIC : COACH_SAYS[PROGRAM.trainer]; if (!c) return "";
+  if (gen && phKey === "f1") return c.test;                     // a member's first phase: the "day one" line
   return /^d|jul/.test(phKey) ? c.deload : (phKey === "test" ? c.test : /rt|end/.test(phKey) ? c.retest : c.build);
 }
 const PATH_SKIP = new Set(["mobil"]);          /* optional sessions stay off the path */
@@ -163,7 +166,7 @@ function pathClick(t){
   const ch = t.closest("[data-pchest]");
   if (ch){
     const w = Number(ch.dataset.pchest);
-    if (ch.classList.contains("open")) toast(`Week ${w} chest opened: +50 XP from ${PROGRAM.by}.`);
+    if (ch.classList.contains("open")) toast(`Week ${w} done. That's the plan working.`);
     else toast(`Finish every session in week ${w} to open this chest.`);
     return true;
   }

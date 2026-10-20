@@ -53,7 +53,7 @@ function demoSeed(){
 
 if (window.SWOLE_DEMO){
   /* fast-forward was requested on the previous page load: START is now 4 weeks back, so seed */
-  if (demoGet("swole:demo:ff") === true && !demoGet("swole:demo:seeded")){ demoSeed(); demoPut("swole:demo:seeded", true); }
+  if (demoGet("swole:demo:ff") === true && !demoGet("swole:demo:seeded")) window.__demoNeedsSeed = true;   // gen.js seeds once the plan is built
   document.documentElement.classList.add("is-demo");
   document.addEventListener("DOMContentLoaded", () => {
     const b = document.createElement("div"); b.id = "demobadge"; b.textContent = "Demo"; document.body.appendChild(b);

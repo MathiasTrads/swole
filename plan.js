@@ -10,6 +10,7 @@ if (!window.SWOLE_DEMO){
     if (!window.SWOLE_PROFILE && !has("swole:data:sessions") && !has("swole:data:checkins")) localStorage.setItem("swole:introSeen", "true");
   } catch(e){}
 }
+var PLAN_WEEKS = 26;   // gen.js changes it for a member's own plan
 /* ============ DATES ============ */
 const START = window.SWOLE_DEMO
   ? (() => { const d = new Date(); d.setHours(0,0,0,0); let ff = false; try { ff = JSON.parse(localStorage.getItem("swole:demo:ff")) === true; } catch(e){}
@@ -130,7 +131,7 @@ const KIND_LABEL = {strength:"Strength", conditioning:"Conditioning", mobility:"
 
 function plannedFor(d){
   const out = [], w = weekNo(d), dw = dow(d);
-  if (w >= 1 && w <= 26){ const ph = phaseOf(w); const am = TEMPLATES[ph.tpl][dw]; if (am) out.push({slot:"am", id:am}); }
+  if (w >= 1 && w <= PLAN_WEEKS){ const ph = phaseOf(w); const am = TEMPLATES[ph.tpl][dw]; if (am) out.push({slot:"am", id:am}); }
   if (MT[dw] && !window.SWOLE_PROFILE) out.push({slot:"pm", id:MT[dw]});   // the 18:00 Muay Thai classes are Mathias's own schedule
   return out;
 }

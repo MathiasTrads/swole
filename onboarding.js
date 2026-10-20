@@ -70,12 +70,13 @@ function obPlan(){
 /* ---------- roster ---------- */
 const ROSTER = [
   {id:"swole", img:"media/cut-default.webp"},   // the original Swole art
-  ...["ayo","mei","rafa","dev","freja","malik","nadia"].map(id => ({id, img:`media/roster/${id}/default.webp`})),   // ids are internal file keys only; Swoles have no names
+  ...["ayo","mei","rafa","dev","freja","malik","nadia","sw8","sw9"].map(id => ({id, img:`media/roster/${id}/default.webp`})),   // ids are internal file keys only; Swoles have no names
 ];
 /* ---------- Swole builder (v25) ----------
    The member picks traits; the preview below is a quick sketch only.
-   The real Swole is drawn from swolePrompt(v) with the same recipe as the roster Swoles
-   (Magnific, seedream-5-pro + style refs), in 4 moods, then cut out. Demo: nothing is sent. */
+   The real Swole is drawn from swolePrompt(v) with the lookbook recipe (Swole Lookbook v1):
+   Magnific seedream-5-pro, style ref = original Swole art (Cq4AjOiEEy) only, flat Swole red field,
+   4 moods, then cut out. Demo: nothing is sent. */
 const AV = {
   frame:  ["Feminine", "In between", "Masculine"],
   age:    ["20s", "30s", "40s", "50s", "60+"],
@@ -109,19 +110,23 @@ function swolePrompt(v){
   const hair = AVW.hairS[v.hairS].replace("{c}", AVW.hairC[v.hairC]);
   const bits = [AVW.build[v.build], `${AVW.skin[v.skin]} skin`, v.hairS === 0 ? `a ${AVW.hairC[v.hairC]} buzzcut` : hair];
   if (v.beard) bits.push(AVW.beard[v.beard]);
-  bits.push(`${AVW.eyes[v.eyes]} eyes`);
   if (v.glasses) bits.push(AVW.glasses[v.glasses]);
   if (v.ears) bits.push(AVW.ears[v.ears]);
-  return "2D anime illustration, Japanese anime character design, cel-shaded with flat colour areas and bold clean black outlines, like a fighting game character select portrait. "
-    + "Full body from head to feet, standing relaxed facing the viewer, arms at the sides. "
-    + `A ${AVW.who[v.frame]} in ${AVW.pron[v.frame]} ${AVW.age[v.age]}, ${bits.join(", ")}, calm friendly look, anime-style eyes. `
-    + "Plain black crewneck t-shirt, plain black training shorts, white trainers. Plain light grey background, soft floor shadow. Not photorealistic, no text, no logos.";
+  const deep = v.skin >= 6 ? "Warm soft key light from the upper left so every facial feature reads clearly, gentle warm highlights on forehead, cheekbones, nose and lips. " : "";
+  return "Single full-body figure from head to feet, front view, standing relaxed with weight on one leg, one hand in a shorts pocket, other arm loose at the side. "
+    + `One original ${AVW.who[v.frame]} in ${AVW.pron[v.frame]} ${AVW.age[v.age]}, ${bits.join(", ")}, with tall long-legged fashion-illustration proportions and an honest natural body. `
+    + "Plain black crewneck t-shirt, plain black training shorts with no stripes or piping, plain white trainers. "
+    + deep
+    + "Refined seinen anime illustration exactly in the style reference: crisp fine black linework, soft cel shading with gentle tonal steps, natural realistic facial structure, subtle skin texture. "
+    + `Eyes: natural almond-shaped, slightly narrowed and relaxed, strong upper lash line, detailed ${AVW.eyes[v.eyes]} iris with a small soft highlight, defined brows sitting low. `
+    + "Calm, quietly confident expression. Flat solid red background (#FF3B2F), soft dark floor shadow. No props. Original character. No text, no logos, no watermark.";
 }
 /* the ready-made Swole closest to the traits: shown while the member's own Swole is being drawn */
 const ROSTER_TRAITS = {
   swole:{frame:2, age:1, build:2, skin:1, hairS:0}, ayo:{frame:0, age:0, build:2, skin:6, hairS:3}, mei:{frame:0, age:1, build:0, skin:1, hairS:6},
   rafa:{frame:2, age:2, build:3, skin:4, hairS:1}, dev:{frame:2, age:0, build:0, skin:5, hairS:2}, freja:{frame:0, age:1, build:3, skin:0, hairS:5},
   malik:{frame:2, age:1, build:4, skin:7, hairS:4}, nadia:{frame:0, age:3, build:0, skin:4, hairS:9},
+  sw8:{frame:2, age:1, build:2, skin:1, hairS:1}, sw9:{frame:0, age:1, build:1, skin:1, hairS:8},
 };
 function closestSwole(v){
   let best = "swole", bd = 1e9;
@@ -210,7 +215,7 @@ function obRender(){
 function obView(st){
   const name = OB.a.name ? esc(OB.a.name) : "";
   if (st === "welcome") return `
-    <div class="obwel"><h1 class="obbig">Grow your Swole.</h1>
+    <div class="obwel"><h1 class="obbig">Train smart. Show up.</h1>
     <img src="${POSE("arms")}" alt="" class="obfig">
     <p class="obp">Tell us what you want to achieve. Get a plan, a coach and a Swole of your own.</p>
     <button class="pill wide" data-ob="go:email">Get started</button>
