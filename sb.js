@@ -88,6 +88,74 @@ async function sbRest(path, opts = {}){
   const txt = await r.text();
   return txt ? JSON.parse(txt) : null;
 }
+/* ---------- consent (GDPR art. 9: health data needs explicit consent) ---------- */
+const SWOLE_CONSENT_VERSION = "pilot-2026-10";
+const SWOLE_CONTACT = "mathias.trads.olesen@gmail.com";   // swap for the dedicated Swole address when it exists
+const sbConsentOk = () => sbLS.get("swole:sb:consent", "") === SWOLE_CONSENT_VERSION;
+async function sbGiveConsent(){
+  await sbRest("consents", {method: "POST", headers: {Prefer: "return=minimal,resolution=ignore-duplicates"}, body: JSON.stringify({version: SWOLE_CONSENT_VERSION})});
+  sbLS.set("swole:sb:consent", SWOLE_CONSENT_VERSION);
+}
+async function sbCheckConsent(){
+  if (window.SWOLE_DEMO || !SB.session || sbConsentOk()) return;
+  try {
+    const r = await sbRest(`consents?select=version&user_id=eq.${sbUid()}&version=eq.${SWOLE_CONSENT_VERSION}&limit=1`);
+    if (r && r.length){ sbLS.set("swole:sb:consent", SWOLE_CONSENT_VERSION); return; }
+  } catch(e){ return; }
+  if (!document.documentElement.classList.contains("ob-open")) openConsent();
+}
+/* the consent text, shared by the sign-up step and the sheet for existing members */
+function consentHTML(btnAttr){
+  return `
+    <ul class="cons">
+      <li><b>What we store.</b> Your plan, sessions, check-ins (sleep, energy, soreness, stress), injuries you tell us about, test results and body weight if you log it.</li>
+      <li><b>Why.</b> To build your plan, adjust it to how you feel, and keep you safe.</li>
+      <li><b>Who sees it.</b> You and your trainer. Nobody else, and we never sell it.</li>
+      <li><b>Where.</b> On servers in the EU (Frankfurt).</li>
+      <li><b>Your control.</b> Download or delete everything any time in Settings → Your data.</li>
+    </ul>
+    <label class="conschk"><input type="checkbox" id="consBox"><span>I agree that Swole stores and uses my health and training data as described above.</span></label>
+    <p class="obnote">Read the full <a href="privacy.html" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">privacy note</a>. Questions: ${esc(SWOLE_CONTACT)}</p>
+    <button class="pill wide" ${btnAttr} disabled id="consGo">I agree</button>`;
+}
+function openConsent(){
+  openSheet(`
+    <div class="close"><span class="eyebrow">Swole · pilot</span></div>
+    <div class="auth"><h1 class="authh" style="font-size:52px">Your data, your call</h1>
+    <p class="authp">One thing before you keep going.</p>${consentHTML('data-sb="consent"')}</div>`);
+}
+document.addEventListener("change", e => { if (e.target.id === "consBox"){ const g = document.getElementById("consGo"); if (g) g.disabled = !e.target.checked; } });
+
+/* ---------- your data: download + delete ---------- */
+async function sbExport(){
+  const uid = sbUid();
+  const [entries, consents, profile] = await Promise.all([
+    sbRest(`entries?select=col,id,data,updated_at&user_id=eq.${uid}`),
+    sbRest(`consents?select=version,accepted_at&user_id=eq.${uid}`),
+    sbRest(`profiles?select=*&id=eq.${uid}`),
+  ]);
+  const out = {exported_at: new Date().toISOString(), email: SB.session.user.email, account: profile && profile[0] || null, consents, entries};
+  const name = `swole-data-${new Date().toISOString().slice(0, 10)}.json`;
+  const blob = new Blob([JSON.stringify(out, null, 2)], {type: "application/json"});
+  const file = new File([blob], name, {type: "application/json"});
+  if (navigator.canShare && navigator.canShare({files: [file]})){ try { await navigator.share({files: [file], title: "My Swole data"}); return; } catch(e){ if (e.name === "AbortError") return; } }
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+function openDelete(err){
+  openSheet(`
+    <div class="close"><span class="eyebrow">Your data</span><button data-act="settings">Back</button></div>
+    <div class="auth"><h1 class="authh" style="font-size:52px">Delete my account</h1>
+    <p class="authp">This deletes your plan, sessions, check-ins, tests, Swole and login. It can't be undone. Download your data first if you want a copy.</p>
+    <div class="field"><label for="delConf">Type DELETE to confirm</label><input type="text" id="delConf" autocapitalize="characters" autocomplete="off" placeholder="DELETE"></div>
+    ${err ? `<div class="banner r">${esc(err)}</div>` : ""}
+    <button class="pill wide" style="background:#C42419" data-sb="delete-go">Delete everything</button></div>`);
+}
+async function sbDeleteMe(){
+  await sbRest("rpc/delete_me", {method: "POST", body: "{}"});
+  try { Object.keys(localStorage).filter(k => k.startsWith("swole:")).forEach(k => localStorage.removeItem(k)); } catch(e){}
+  SB.session = null; SB.profile = null; SB.dirty = {};
+}
+
 function sbMark(c, id){
   SB.dirty[c] = {...(SB.dirty[c] || {}), [id]: Date.now() + Math.random()};
   sbLS.set("swole:sb:dirty", SB.dirty);
@@ -138,6 +206,7 @@ async function sbLoad(){
     if (p && p[0]){ SB.profile = p[0]; sbLS.set("swole:sb:profile", SB.profile); }
     await sbFlush();
     if (!sbHasDirty()) sbSetState("synced");
+    sbCheckConsent();
   } catch(e){ SB.lastError = (e.message || "error") + " while loading"; sbSetState("error"); }
 }
 
@@ -193,6 +262,19 @@ document.addEventListener("click", async e => {
     catch(err){ openAuth.err = sbErrText(err); openAuth("code"); }
   }
   else if (a === "back"){ openAuth("email"); }
+  else if (a === "consent"){
+    b.disabled = true; b.textContent = "Saving…";
+    try { await sbGiveConsent(); closeSheet(); toast("Thanks. You're all set."); }
+    catch(err){ b.disabled = false; b.textContent = "I agree"; toast("Couldn't save. Check your connection and try again."); }
+  }
+  else if (a === "export"){ b.disabled = true; b.textContent = "Preparing…"; try { await sbExport(); } catch(err){ toast("Couldn't get your data. Try again when you're online."); } b.disabled = false; b.textContent = "Download my data"; }
+  else if (a === "delete"){ openDelete(); }
+  else if (a === "delete-go"){
+    if (((document.getElementById("delConf") || {}).value || "").trim().toUpperCase() !== "DELETE"){ openDelete("Type DELETE to confirm."); return; }
+    b.disabled = true; b.textContent = "Deleting…";
+    try { await sbDeleteMe(); closeSheetQuiet(); toast("Your account and data are deleted."); setTimeout(() => location.reload(), 1200); }
+    catch(err){ openDelete("Couldn't delete right now (" + (err.message || "error") + "). Try again, or email " + SWOLE_CONTACT + "."); }
+  }
   else if (a === "skip"){ sbLS.set("swole:sb:skip", true); closeSheet(); }
   else if (a === "login"){ openAuth("email"); }
   else if (a === "logout"){ await sbSignOut(); toast("Logged out. Your data stays on this phone."); openSettings(); }
@@ -216,6 +298,11 @@ function sbSettingsBlock(){
       <p class="verdict-l" style="text-align:left;max-width:none;margin:6px 0">Logged in as <b>${esc(SB.session.user.email || "")}</b>${role && role !== "member" ? ` · ${esc(role)}` : ""}. Your data is stored in the EU (Frankfurt).${last ? ` Last sync ${esc(last)}.` : ""}</p>
       ${SB.lastError ? `<div class="banner r" style="margin:8px 0">${esc(SB.lastError)}</div>` : ""}
       <div class="opts" style="margin:10px 0 12px"><button class="btn" data-sb="sync">Sync now</button><button class="btn ghost" data-sb="logout">Log out</button></div>
+    </div>
+    <div class="block">
+      <h3>Your data<small>EU · Frankfurt</small></h3>
+      <p class="verdict-l" style="text-align:left;max-width:none;margin:6px 0">Get a copy of everything Swole has stored about you, or delete it all. <a href="privacy.html" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">Privacy note</a></p>
+      <div class="opts" style="margin:10px 0 12px"><button class="btn" data-sb="export">Download my data</button><button class="btn ghost" style="color:#C42419" data-sb="delete">Delete my account</button></div>
     </div>`;
 }
 

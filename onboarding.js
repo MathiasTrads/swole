@@ -199,7 +199,7 @@ function avatarSVG(v, size){
 }
 
 /* ---------- render ---------- */
-const OB_ORDER = ["welcome","email","code","goal","intake","building","plan","swole","coach","invite","done"];
+const OB_ORDER = ["welcome","email","code","consent","goal","intake","building","plan","swole","coach","invite","done"];
 function obRender(){
   let el = document.getElementById("onb");
   if (!el){ el = document.createElement("div"); el.id = "onb"; document.body.appendChild(el); }
@@ -244,6 +244,9 @@ function obView(st){
     ${OB_DEMO ? `<p class="obnote">Demo: any 6 digits work.</p>` : `<p class="obnote">Can't find it? Look in spam. It can take a minute.</p>`}
     <button class="pill wide" data-ob="code">Continue</button>
     ${OB_DEMO ? "" : `<button class="oblink" data-ob="resend">Send a new code</button>`}`;
+  if (st === "consent") return `
+    <h2 class="obh">Your data, your call</h2><p class="obp">Swole works with health data, so we need your OK first.</p>
+    ${typeof consentHTML === "function" ? consentHTML('data-ob="consent"') : ""}`;
   if (st === "goal") return `
     <h2 class="obh">What do you want to achieve?</h2><p class="obp">Pick one to start. You can add more goals later.</p>
     ${OB_GOALS.map(g => `<div class="obcat"><span>${esc(g.label)}</span><div class="obchips">${g.items.map(it => `<button class="obchip ${OB.goal && OB.goal.label === it ? "on" : ""}" data-ob="goal:${g.cat}|${esc(it)}">${esc(it)}</button>`).join("")}</div></div>`).join("")}
@@ -350,7 +353,7 @@ function obGo(step){ if (step === "swole:build" && !OB.avTouched && OB.a.age) OB
 function obBack(){
   const s = OB.step;
   if (s === "intake" && OB.qi > 0){ OB.qi--; obRender(); return; }
-  const prev = {email:"welcome", code:"email", goal:"code", intake:"goal", plan:"intake", swole:"plan", "swole:photo":"swole", "swole:build":"swole", "swole:drawing":"swole:build", coach:"swole", invite:"coach"}[s];
+  const prev = {email:"welcome", code:"email", consent:"code", goal:"consent", intake:"goal", plan:"intake", swole:"plan", "swole:photo":"swole", "swole:build":"swole", "swole:drawing":"swole:build", coach:"swole", invite:"coach"}[s];
   if (!OB_DEMO && SB.session && (prev === "code" || prev === "email")) return;
   if (prev){ if (prev === "intake") OB.qi = OB_Q.length - 1; obGo(prev); }
 }
@@ -389,11 +392,18 @@ document.addEventListener("click", async e => {
   if (a === "resend"){ try { await sbSendCode(OB.email); toast("New code sent."); } catch(err){ toast(sbErrText(err)); } return; }
   if (a === "code"){
     const v = (document.getElementById("obCode").value || "").replace(/\D/g, ""); if (v.length < 6){ toast("Type the code from the email."); return; }
-    if (OB_DEMO) return obGo("goal");
+    if (OB_DEMO) return obGo("consent");
     b.disabled = true; b.textContent = "Checking…";
     try { await sbVerify(OB.email, v); } catch(err){ b.disabled = false; b.textContent = "Continue"; toast(sbErrText(err)); return; }
     const p = S.settings && S.settings.profile;
     if (p && p.onboarded){ toast("Welcome back."); setTimeout(() => location.reload(), 600); return; }   // an existing member on a new phone
+    return obGo(sbConsentOk() ? "goal" : "consent");
+  }
+  if (a === "consent"){
+    if (!(document.getElementById("consBox") || {}).checked) return;
+    if (OB_DEMO || sbConsentOk()) return obGo("goal");
+    b.disabled = true; b.textContent = "Saving…";
+    try { await sbGiveConsent(); } catch(err){ b.disabled = false; b.textContent = "I agree"; toast("Couldn't save. Check your connection and try again."); return; }
     return obGo("goal");
   }
   if (a.startsWith("goal:")){ const [cat, label] = a.slice(5).split("|"); OB.goal = {cat, label}; OB.qi = 0; return obGo("intake"); }
