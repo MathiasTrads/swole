@@ -208,16 +208,30 @@ function obRender(){
   const back = ["welcome","building","done"].includes(st) ? "" : `<button class="obback" data-ob="back" aria-label="Back">‹</button>`;
   el.innerHTML = `<div class="obtop">${back}${prog}</div><div class="obbody">${obView(st)}</div>`;
   el.scrollTop = 0;
+  if (st === "welcome") habitRotate(); else clearInterval(habitTimer);
   if (st === "intake"){ const log = el.querySelector(".oblog"); if (log) log.scrollTop = log.scrollHeight; const i = el.querySelector(".obin input"); if (i) setTimeout(() => i.focus(), 200); }
   if (st === "swole:drawing" && !OB.drawn) setTimeout(() => { if (OB.step === "swole:drawing"){ OB.drawn = true; obRender(); } }, 2600);
   if (st === "building") setTimeout(() => { if (OB.step === "building"){ OB.plan = obPlan(); OB.step = "plan"; obRender(); } }, 2400);
 }
+/* welcome headline: "Steady habits beat ___", the last words rotate */
+const HABIT_WORDS = ["big bursts.", "hard starts.", "crash diets.", "going all in.", "quick fixes.", "beast mode.", "motivation.", "talent."];
+let habitTimer = 0;
+function habitRotate(){
+  clearInterval(habitTimer);
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  let i = 0;
+  habitTimer = setInterval(() => {
+    const el = document.querySelector(".obrot");
+    if (!el){ clearInterval(habitTimer); return; }
+    el.classList.add("out");
+    setTimeout(() => { i = (i + 1) % HABIT_WORDS.length; el.textContent = HABIT_WORDS[i]; el.classList.remove("out"); }, 260);
+  }, 2400);
+}
 function obView(st){
   const name = OB.a.name ? esc(OB.a.name) : "";
   if (st === "welcome") return `
-    <div class="obwel"><h1 class="obbig">Train smart. Show up.</h1>
-    <img src="${POSE("arms")}" alt="" class="obfig">
-    <p class="obp">Tell us what you want to achieve. Get a plan, a coach and a Swole of your own.</p>
+    <div class="obwel"><h1 class="obbig obhab">Steady habits beat <span class="obrot" aria-live="off">${HABIT_WORDS[0]}</span></h1>
+    <p class="obp obsub">With a clear path, a coach and a Swole of your own, your goals are closer than you think.</p>
     <button class="pill wide" data-ob="go:email">Get started</button>
     <button class="oblink" data-ob="go:email">I already have an account</button></div>`;
   if (st === "email") return `

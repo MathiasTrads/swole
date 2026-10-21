@@ -161,8 +161,7 @@ function openAuth(step){
   openSheet(`
     <div class="close"><span class="eyebrow">Swole · pilot</span><button data-sb="skip">Not now</button></div>
     <div class="auth">
-      <h1 class="authh">Train smart. Show up.</h1>
-      <img class="authfig" src="${POSE("arms")}" alt="">
+      <h1 class="authh">Steady habits beat ${typeof HABIT_WORDS !== "undefined" ? HABIT_WORDS[0] : "big bursts."}</h1>
       ${body}
       <p class="authfine">The pilot is invite-only. Your check-ins and logs are stored in the EU and only you and your trainer can see your training data.</p>
     </div>`);
