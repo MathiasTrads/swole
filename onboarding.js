@@ -225,13 +225,13 @@ function habitRotate(){
     if (!el){ clearInterval(habitTimer); return; }
     el.classList.add("out");
     setTimeout(() => { i = (i + 1) % HABIT_WORDS.length; el.textContent = HABIT_WORDS[i]; el.classList.remove("out"); }, 260);
-  }, 2400);
+  }, 1680);
 }
 function obView(st){
   const name = OB.a.name ? esc(OB.a.name) : "";
   if (st === "welcome") return `
     <div class="obwel"><h1 class="obbig obhab">Steady habits beat <span class="obrot" aria-live="off">${HABIT_WORDS[0]}</span></h1>
-    <p class="obp obsub">With a clear path, a coach and a Swole of your own, your goals are closer than you think.</p>
+    <p class="obp obsub">Your path lies before you.</p>
     <button class="pill wide" data-ob="go:email">Get started</button>
     <button class="oblink" data-ob="go:email">I already have an account</button></div>`;
   if (st === "email") return `
@@ -261,7 +261,7 @@ function obView(st){
       <div class="oblog">${intro}${log}<div class="obmsg c">${esc(q.q)}</div></div>${input}`;
   }
   if (st === "building") return `
-    <div class="obbuild"><img src="${POSE("squat")}" alt="" class="obfig sm"><h2 class="obh">Building your plan…</h2>
+    <div class="obbuild" style="padding-top:26vh"><h2 class="obh">Building your plan…</h2>
     <ul class="obsteps"><li>Reading your answers</li><li>Picking the right training blocks</li><li>Planning rest and retests</li></ul></div>`;
   if (st === "plan"){
     const P = OB.plan;
@@ -325,8 +325,8 @@ function obView(st){
       <img src="${castImg(c.id)}" alt=""><div><b>${esc(CAST[c.id].name)}</b><span>${esc(c.tag)}</span><p>“${esc(c.line(OB.goal.label))}”</p></div></button>`).join("")}
     <button class="pill wide" data-ob="go:invite" ${OB.coach ? "" : "disabled"}>Train with ${OB.coach ? esc(CAST[OB.coach].name) : "…"}</button>`;
   if (st === "invite") return `
-    <h2 class="obh">Better with a buddy</h2><p class="obp">People who train with a friend keep going. Invite one and you both get the Buddy wraps when they finish their first week.</p>
-    <div class="obreward"><img src="media/items/wraps-dragon.webp" alt="Dragon wraps"><span>Buddy reward · Rare</span></div>
+    <h2 class="obh">Better with a buddy</h2><p class="obp">People who train with a friend keep going. Invite one and you both get the Buddy tee when they finish their first week.</p>
+    <div class="obreward"><img src="media/items/buddy-tee.webp" alt="Buddy tee"><span>Buddy reward · Rare</span></div>
     <button class="pill wide" data-ob="share">Invite a buddy</button>
     <button class="oblink" data-ob="go:done">Not now</button>`;
   if (st === "done"){
@@ -424,7 +424,7 @@ document.addEventListener("click", async e => {
   if (a === "copyprompt"){ const t = swolePrompt(OB.av); try { await navigator.clipboard.writeText(t); toast("Prompt copied."); } catch(err){ const el = document.getElementById("obPrompt"); if (el){ const r = document.createRange(); r.selectNodeContents(el); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); } toast("Select and copy the prompt."); } return; }
   if (a.startsWith("coach:")){ OB.coach = a.slice(6); return obRender(); }
   if (a === "share"){
-    const data = {title: "Swole", text: `I'm training for "${OB.goal.label}" on Swole. Join me and we both get the Buddy wraps.`, url: location.origin + location.pathname};
+    const data = {title: "Swole", text: `I'm training for "${OB.goal.label}" on Swole. Join me and we both get the Buddy tee.`, url: location.origin + location.pathname};
     try { if (navigator.share){ await navigator.share(data); } else { await navigator.clipboard.writeText(data.text + " " + data.url); toast("Invite link copied."); } } catch(err){}
     return obGo("done");
   }
