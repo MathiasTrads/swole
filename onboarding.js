@@ -314,7 +314,7 @@ function obView(st){
   }
   if (st === "swole:drawing"){
     const stand = ROSTER.find(f => f.id === OB.fighter) || ROSTER[0];
-    if (!OB.drawn) return `<div class="obbuild"><div class="obavatar pulse">${avatarSVG(OB.av, 150)}</div><h2 class="obh">Drawing your Swole…</h2><p class="obp">Full body, four moods. It takes about a minute.</p></div>`;
+    if (!OB.drawn) return `<div class="obbuild"><div class="obavatar pulse">${avatarSVG(OB.av, 150)}</div><h2 class="obh">Drawing your Swole…</h2><p class="obp">Full body, four moods. It takes a few minutes.</p></div>`;
     return `<h2 class="obh">Your Swole is on its way</h2>
       <p class="obp">We'll swap it in the moment it's ready. Until then you train with the closest ready-made Swole.</p>
       <div class="obpair"><figure><div class="obavatar">${avatarSVG(OB.av, 120)}</div><figcaption>Your Swole</figcaption></figure><span aria-hidden="true">→</span><figure><img src="${stand.img}" alt="Ready-made Swole"><figcaption>For now</figcaption></figure></div>

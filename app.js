@@ -196,9 +196,11 @@ function swoleSVG(mood){
 
 /* ============ AVATAR (uploaded art) ============ */
 /* roster: the Swole picked in onboarding (demo). Every avatar is "a Swole". null = the original Swole art. */
-const FIGHTER = (window.SWOLE_PROFILE && window.SWOLE_PROFILE.fighter && window.SWOLE_PROFILE.fighter !== "swole") ? window.SWOLE_PROFILE.fighter : null;
+/* v32: a member's own drawn Swole (profile.avatarArt) wins over the ready-made stand-in */
+const OWN_ART = (window.SWOLE_PROFILE && window.SWOLE_PROFILE.avatarStatus === "ready" && window.SWOLE_PROFILE.avatarArt && window.SWOLE_PROFILE.avatarArt.default) ? window.SWOLE_PROFILE.avatarArt : null;
+const FIGHTER = OWN_ART ? "own" : (window.SWOLE_PROFILE && window.SWOLE_PROFILE.fighter && window.SWOLE_PROFILE.fighter !== "swole") ? window.SWOLE_PROFILE.fighter : null;
 window.SWOLE_FIGHTER = FIGHTER;
-const RF = m => `media/roster/${FIGHTER}/${m}.webp`;
+const RF = m => OWN_ART ? (OWN_ART[m] || OWN_ART.default) : `media/roster/${FIGHTER}/${m}.webp`;
 const CUTSRC = m => FIGHTER ? RF(m) : `media/cut-${m}.webp`;
 const BUILTIN = {src:CUTSRC("default"), type:"image/webp", cut:true};
 const BUILTIN_SLOT = {

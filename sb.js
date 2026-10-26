@@ -90,7 +90,7 @@ async function sbRest(path, opts = {}){
 }
 /* ---------- consent (GDPR art. 9: health data needs explicit consent) ---------- */
 const SWOLE_CONSENT_VERSION = "pilot-2026-10";
-const SWOLE_CONTACT = "mathias.trads.olesen@gmail.com";   // swap for the dedicated Swole address when it exists
+const SWOLE_CONTACT = "hello@joinswole.com";
 const sbConsentOk = () => sbLS.get("swole:sb:consent", "") === SWOLE_CONSENT_VERSION;
 async function sbGiveConsent(){
   await sbRest("consents", {method: "POST", headers: {Prefer: "return=minimal,resolution=ignore-duplicates"}, body: JSON.stringify({version: SWOLE_CONSENT_VERSION})});
@@ -151,6 +151,7 @@ function openDelete(err){
     <button class="pill wide" style="background:#C42419" data-sb="delete-go">Delete everything</button></div>`);
 }
 async function sbDeleteMe(){
+  try { if (typeof drawDeleteFiles === "function") await drawDeleteFiles(); } catch(e){}   // Swole images in storage
   await sbRest("rpc/delete_me", {method: "POST", body: "{}"});
   try { Object.keys(localStorage).filter(k => k.startsWith("swole:")).forEach(k => localStorage.removeItem(k)); } catch(e){}
   SB.session = null; SB.profile = null; SB.dirty = {};
@@ -207,6 +208,7 @@ async function sbLoad(){
     await sbFlush();
     if (!sbHasDirty()) sbSetState("synced");
     sbCheckConsent();
+    if (typeof drawWatch === "function") drawWatch();
   } catch(e){ SB.lastError = (e.message || "error") + " while loading"; sbSetState("error"); }
 }
 
@@ -278,6 +280,7 @@ document.addEventListener("click", async e => {
   else if (a === "skip"){ sbLS.set("swole:sb:skip", true); closeSheet(); }
   else if (a === "login"){ openAuth("email"); }
   else if (a === "logout"){ await sbSignOut(); toast("Logged out. Your data stays on this phone."); openSettings(); }
+  else if (a === "redraw"){ b.disabled = true; await drawRetry(); openSettings(); }
   else if (a === "sync"){ await sbLoad(); render(); toast(SB.state === "synced" ? "Synced." : "Couldn't sync."); openSettings(); }
 });
 
@@ -299,6 +302,7 @@ function sbSettingsBlock(){
       ${SB.lastError ? `<div class="banner r" style="margin:8px 0">${esc(SB.lastError)}</div>` : ""}
       <div class="opts" style="margin:10px 0 12px"><button class="btn" data-sb="sync">Sync now</button><button class="btn ghost" data-sb="logout">Log out</button></div>
     </div>
+    ${typeof drawSettingsBlock === "function" ? drawSettingsBlock() : ""}
     <div class="block">
       <h3>Your data<small>EU · Frankfurt</small></h3>
       <p class="verdict-l" style="text-align:left;max-width:none;margin:6px 0">Get a copy of everything Swole has stored about you, or delete it all. <a href="privacy.html" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">Privacy note</a></p>
