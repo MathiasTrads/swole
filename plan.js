@@ -127,15 +127,16 @@ const SESS = {
   mtSelf:{title:"Muay Thai · Solo", kind:"mt", dur:"60 min", sub:"Bag and shadow",
     note:"E.g. 6 × 3 min rounds, 1 min rest. Technique before pace.", blocks:[]},
 };
-const KIND_LABEL = {strength:"Strength", conditioning:"Conditioning", mobility:"Mobility", test:"Test", mt:"Muay Thai"};
+const KIND_LABEL = {strength:"Strength", conditioning:"Conditioning", mobility:"Mobility", test:"Test", mt:"Muay Thai", class:"Your class"};
 
 function plannedFor(d){
   const out = [], w = weekNo(d), dw = dow(d);
   if (w >= 1 && w <= PLAN_WEEKS){ const ph = phaseOf(w); const am = TEMPLATES[ph.tpl][dw]; if (am) out.push({slot:"am", id:am}); }
   if (MT[dw] && !window.SWOLE_PROFILE) out.push({slot:"pm", id:MT[dw]});   // the 18:00 Muay Thai classes are Mathias's own schedule
+  if (window.SWOLE_PROFILE && window.SWOLE_FIXED && window.SWOLE_FIXED[dw]) out.push({slot:"pm", id:window.SWOLE_FIXED[dw]});   // a member's own fixed classes (gen.js)
   return out;
 }
-const slotTime = it => it.slot === "am" ? "Morning" : (it.id === "mtSelf" ? "Flexible" : "18:00");
+const slotTime = it => SESS[it.id] && SESS[it.id].when ? SESS[it.id].when : it.slot === "am" ? "Morning" : (it.id === "mtSelf" ? "Flexible" : "18:00");
 
 const TESTS = [
   {id:"broad", name:"Broad jump", how:"Best of 3, in cm.", fields:[["v","cm"]]},

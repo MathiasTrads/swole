@@ -165,7 +165,7 @@ function swoleSVG(mood){
   const mouth = mood === "grin" ? `<path d="M88 127 Q100 133 114 123" stroke-width="3"/><path d="M112 121 L116 124" stroke-width="2"/>`
     : mood === "stern" ? `<path d="M90 129 L110 129" stroke-width="3.5"/>`
     : `<path d="M90 128 Q100 130 110 127" stroke-width="3"/>`;
-  return `<svg viewBox="0 0 200 232" role="img" aria-label="Swole, your coach">
+  return `<svg viewBox="0 0 200 232" role="img" aria-label="Your Swole">
   <defs>
     <pattern id="h${uid}" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(40)"><line x1="0" y1="0" x2="0" y2="4" stroke="${K}" stroke-width="1.3"/></pattern>
     <pattern id="b${uid}" width="3.2" height="3.2" patternUnits="userSpaceOnUse"><rect width="3.2" height="3.2" fill="#2A3034"/><circle cx="1.6" cy="1.6" r=".75" fill="${K}"/></pattern>
@@ -210,7 +210,7 @@ const BUILTIN_SLOT = {
 };
 /* v11 character pack */
 const MOMENT = {
-  intro:{src:"media/m-intro.webp", ms:5100, word:"I'M SWOLE", sub:`Your coach for the next ${PLAN_WEEKS} weeks. Check in every morning. I'll handle the rest.`},
+  intro:{src:"media/m-intro.webp", ms:5100, word:"THIS IS YOU", sub:`Your Swole: you, on your path for the next ${PLAN_WEEKS} weeks. Check in every morning and show up. It shows.`},
   kick:{src:"media/m-kick.webp", ms:5100, word:"LET'S GO", sub:""},
   flex:{src:"media/m-flex.webp", ms:5100, word:"DONE", sub:"Logged. That's how you get swole."},
   pose:{src:"media/m-pose.webp", ms:5100, word:"SWOLE", sub:""},
@@ -222,7 +222,7 @@ const POSE = n => FIGHTER ? RF(POSE_MOOD[n] || "default") : `media/pose/${n}.web
 if (FIGHTER){ // moments are the original Swole's animations: show the picked Swole's still pose instead
   const MM = {intro:"default", kick:"ready", flex:"default", pose:"ready", shadow:"ready"};
   for (const k in MOMENT) MOMENT[k].src = RF(MM[k] || "default");
-  MOMENT.intro.word = "LET'S WORK"; MOMENT.intro.sub = "Your Swole for the next weeks. Check in every morning. Swole handles the rest.";
+  MOMENT.intro.word = "THIS IS YOU"; MOMENT.intro.sub = `Your Swole: you, on your path for the next ${PLAN_WEEKS} weeks. Check in every morning and show up. It shows.`;
 }
 function artFor(slot){
   if (FIGHTER) return BUILTIN_SLOT[slot] || BUILTIN;
@@ -598,7 +598,7 @@ function openSession(key, id){
   const r = readiness(S.checkins[date]);
   const log = S.sessions[key] || {};
   const w = weekNo(d), ph = w >= 1 && w <= PLAN_WEEKS ? phaseOf(w) : null;
-  const trainable = s.kind !== "mt";
+  const trainable = s.kind !== "mt" && s.kind !== "class";
   let banner = "";
   if (r && trainable){
     if (r.level === "r" && s.kind !== "mobility") banner = `<div class="banner r">Red day. Swap this for 15 min mobility and 20 min zone 2.</div>`;

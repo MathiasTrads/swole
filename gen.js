@@ -7,12 +7,82 @@
    - max 2 Zone Red sessions a week, at least 1 rest day, deload weeks at ~60 % volume
    - max tests only in Test weeks; beginners get gentler versions
    Loaded after plan.js + demo.js, before path.js and app.js. */
+/* ---------- fixed weekly sessions (v34) ----------
+   A member's own classes ("I have Pilates every Friday morning") are parsed at sign-up into
+   {label, days:[0–6, Mon = 0], when, hard}. The plan works around them:
+   plan sessions go on free days, at least one day stays fully free, and hard classes
+   (boxing, CrossFit, football…) count against the 2-a-week Zone Red cap. */
+const FX_DAYS = [["monday","mondays","mon","mandag","mandage"],["tuesday","tuesdays","tue","tues","tirsdag","tirsdage"],["wednesday","wednesdays","wed","weds","onsdag","onsdage"],["thursday","thursdays","thu","thur","thurs","torsdag","torsdage"],["friday","fridays","fri","fredag","fredage"],["saturday","saturdays","sat","lørdag","lørdage","lordag"],["sunday","sundays","sun","søndag","søndage","sondag"]];
+const FX_SHORT = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+const FX_HARD = /box|muay|thai|mma|bjj|jiu|jitsu|kick|crossfit|hiit|spin|bootcamp|sparr|wrestl|judo|karate|football|soccer|fodbold|handball|håndbold|hockey|rugby|basket|interval|hyrox/i;
+function parseFixed(text){
+  const raw = String(text || "").trim(); if (!raw) return null;
+  const t = " " + raw.toLowerCase().replace(/[.,!?]/g, " ") + " ";
+  let days = [];
+  if (/\b(every ?day|daily|hver dag)\b/.test(t)) days = [0,1,2,3,4,5,6];
+  else {
+    if (/\bweekdays?\b|\bhverdage?\b/.test(t)) days.push(0,1,2,3,4);
+    if (/\bweekends?\b|\bweekend\b/.test(t)) days.push(5,6);
+    FX_DAYS.forEach((names, i) => { if (names.some(n => new RegExp("[^a-zæøå]" + n + "[^a-zæøå]").test(t))) days.push(i); });
+  }
+  days = [...new Set(days)].sort((a, b) => a - b);
+  if (!days.length) return {error:"day"};
+  let when = null;
+  const hm = t.match(/\b(?:at|kl\.?|@)?\s*(\d{1,2})(?:[:.](\d{2}))?\s*(am|pm)?\b/);
+  if (/\b(morning|mornings|before work|morgen|formiddag)\b/.test(t)) when = "Morning";
+  else if (/\b(lunch|noon|midday|frokost)\b/.test(t)) when = "Midday";
+  else if (/\b(afternoon|afternoons|eftermiddag)\b/.test(t)) when = "Afternoon";
+  else if (/\b(evening|evenings|night|nights|after work|aften)\b/.test(t)) when = "Evening";
+  if (hm && /\d/.test(hm[1]) && (hm[2] || hm[3] || /\b(at|kl)\b/.test(hm[0]))){
+    let h = Number(hm[1]); if (hm[3] === "pm" && h < 12) h += 12; if (hm[3] === "am" && h === 12) h = 0;
+    if (h >= 0 && h <= 23) when = String(h).padStart(2, "0") + ":" + (hm[2] || "00");
+  }
+  // what is left once days, times and filler words are gone = the activity
+  const filler = new Set(["i","i'm","im","every","each","on","at","in","the","a","an","and","+","&","do","does","have","has","go","goes","to","attend","attends","take","play","plays","train","training","class","classes","session","sessions","morning","mornings","afternoon","afternoons","evening","evenings","night","nights","lunch","noon","midday","before","after","work","daily","day","days","everyday","weekday","weekdays","weekend","weekends","am","pm","kl","jeg","har","går","til","hver","om","på","og","morgen","aften","eftermiddag","formiddag","frokost","usually","always","normally","also","with","my","from","until","til"]);
+  FX_DAYS.flat().forEach(n => filler.add(n));
+  const words = raw.replace(/[.,!?]/g, " ").split(/\s+/).filter(w => w && !filler.has(w.toLowerCase()) && !/^\d{1,2}([:.]\d{2})?(am|pm)?$/i.test(w));
+  let label = words.join(" ").trim() || "Class";
+  label = label.charAt(0).toUpperCase() + label.slice(1);
+  return {label, days, when, hard: FX_HARD.test(raw), text: raw};
+}
+function fixedDaysLabel(days){
+  const k = days.join(",");
+  if (k === "0,1,2,3,4,5,6") return "Every day";
+  if (k === "0,1,2,3,4") return "Weekdays";
+  if (k === "5,6") return "Weekends";
+  return days.map(d => FX_SHORT[d]).join(" + ");
+}
+/* pick n training days (Mon = 0) around the fixed ones: spread out, one day fully free */
+function swolePlaceDays(n, fixed){
+  const busy = new Set(), hardDays = new Set();
+  (fixed || []).forEach(f => f.days.forEach(d => { busy.add(d); if (f.hard) hardDays.add(d); }));
+  const free = [0,1,2,3,4,5,6].filter(d => !busy.has(d));
+  const max = Math.max(1, free.length - 1);   // keep one fully free day
+  const want = Math.max(1, Math.min(n, max));
+  if (free.length === 0) return {days: [], capped: n > 0};
+  let best = null;
+  const combos = (arr, k, start = 0, cur = [], out = []) => { if (cur.length === k){ out.push(cur.slice()); return out; } for (let i = start; i < arr.length; i++){ cur.push(arr[i]); combos(arr, k, i + 1, cur, out); cur.pop(); } return out; };
+  for (const c of combos(free, Math.min(want, free.length))){
+    const all = [...new Set([...c, ...busy])].sort((a, b) => a - b);
+    let gap = 7; for (let i = 0; i < c.length; i++){ const a = c[i], b = c[(i + 1) % c.length]; const g = c.length === 1 ? 7 : ((b - a + 7) % 7 || 7); gap = Math.min(gap, g); }
+    let score = gap * 10;
+    c.forEach(d => { if (hardDays.has((d + 1) % 7)) score -= 3; if (hardDays.has((d + 6) % 7)) score -= 2; });   // not right next to a hard class
+    if (all.length < 7) score += 5;   // a fully free day exists
+    score -= c[0] * 0.1;              // ties: start early in the week
+    if (!best || score > best.score) best = {score, c};
+  }
+  return {days: best.c, capped: want < n};
+}
+
 const PLAN_GENERATED = (() => {
   const P = window.SWOLE_PROFILE;
   if (!P || !P.plan || !P.goal) return false;
   const cat = OB_CAT(P.goal.cat), plan = P.plan, A = P.answers || {};
   const mins = Math.max(20, Math.min(90, Number(plan.mins) || 45));
-  const days = Math.max(2, Math.min(6, Number(plan.days) || 3));
+  const days = Math.max(1, Math.min(6, Number(plan.days) || 3));
+  const FX = Array.isArray(P.fixed) ? P.fixed.filter(f => f && Array.isArray(f.days) && f.days.length) : [];
+  const hardFx = FX.reduce((n, f) => n + (f.hard ? f.days.length : 0), 0);
+  const redCap = Math.max(0, 2 - hardFx);   // hard classes count as Zone Red
   const newbie = A.history === "New to training";
   const goal = (P.goal.label || "").toLowerCase();
   const inj = (A.injury || []).filter(x => x !== "Nothing").map(x => x.toLowerCase());
@@ -115,7 +185,7 @@ const PLAN_GENERATED = (() => {
 
   /* ---------- build ---------- */
   const lib = LIB[cat], T = TESTLIB[cat];
-  const dayIdx = ({2:[0,3], 3:[0,2,4], 4:[0,1,3,5], 5:[0,1,2,4,5], 6:[0,1,2,3,4,5]})[days];
+  const dayIdx = FX.length ? swolePlaceDays(days, FX).days : ({1:[2], 2:[0,3], 3:[0,2,4], 4:[0,1,3,5], 5:[0,1,2,4,5], 6:[0,1,2,3,4,5]})[days];
   const typeOf = (ph, i, n) => /deload/i.test(ph.name) ? "deload" : (i === n - 1 && /test|event|check|retest/i.test(ph.name)) ? "test" : i === 0 ? "base" : /peak|sharpen|push|event/i.test(ph.name) ? "peak" : "build";
   const used = new Set();
   const addSess = (id, s) => { SESS[id] = {dur: (s.durMin || mins) + " min", ...s}; used.add(id); return id; };
@@ -125,7 +195,7 @@ const PLAN_GENERATED = (() => {
     dayIdx.forEach((d, k) => {
       if (type === "test" && k === 0){ week[d] = addSess(`g${pi}_test`, {title:T.title, kind:"test", sub:T.sub, note:"Test week: give it your best, but stop if anything hurts.", blocks:[warm(), blk("Test", M(.6), T.tests.map(t => ex(t.name, "1 attempt", t.how))), cool()]}); return; }
       let j = k % lib.length, s = lib[j](type === "test" || type === "deload" ? "base" : type);
-      if (s.zoneRed){ if (red >= 2 || type === "test" || newbie && type === "base" && red >= 1){ s = lib[0]("base"); } else red++; }   // max 2 Zone Red a week (1 for beginners at first)
+      if (s.zoneRed){ if (red >= redCap || type === "test" || newbie && type === "base" && red >= Math.min(1, redCap)){ s = lib[0]("base"); } else red++; }   // max 2 Zone Red a week incl. hard classes (1 for beginners at first)
       if (type === "deload"){ s = {...s, title: s.title + " · easy week", note:"Deload: about 60 % of the usual work. Same quality, less of it.", durMin: Math.max(15, Math.round(mins * .6 / 5) * 5), timer: undefined}; }
       week[d] = addSess(`g${pi}_${k}`, s);
     });
@@ -143,6 +213,15 @@ const PLAN_GENERATED = (() => {
     w += ph.weeks;
   });
   PLAN_WEEKS = w - 1;
+  /* the member's own fixed classes, merged per weekday: plannedFor() shows them as the "pm" slot */
+  window.SWOLE_FIXED = {};
+  for (let d = 0; d < 7; d++){
+    const today = FX.filter(f => f.days.includes(d)); if (!today.length) continue;
+    const when = today.map(f => f.when).filter(Boolean)[0] || "Your time";
+    SESS["fx" + d] = {title: today.map(f => f.label).join(" + "), kind:"class", dur:"Your class", sub: today.some(f => f.hard) ? "Your own session · counts as a hard day" : "Your own session", when,
+      note:"Part of your week. Log it like any session so your plan knows how hard the week was.", blocks:[]};
+    window.SWOLE_FIXED[d] = "fx" + d;   // same Monday-first index as dow()
+  }
   TEMPLATES.base = TEMPLATES.g0;                                  // the Plan page shows week 1 as the weekly template
   TESTS.length = 0; T.tests.forEach(t => TESTS.push(t));
   return true;
