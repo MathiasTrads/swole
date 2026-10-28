@@ -24,6 +24,7 @@ jobs:
         env:
           TZ: Europe/Copenhagen
           DATA_TOKEN: ${{ secrets.DATA_TOKEN }}
+          REMINDER_SECRET: ${{ secrets.REMINDER_SECRET }}
           VAPID_PUBLIC: ${{ secrets.VAPID_PUBLIC }}
           VAPID_PRIVATE: ${{ secrets.VAPID_PRIVATE }}
           DATA_REPO: ${{ github.repository_owner }}/swole-data
