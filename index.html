@@ -11,10 +11,10 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Swole">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=36">
-<link rel="icon" type="image/png" href="icons/icon-192.png?v=36">
-<link rel="preload" href="fonts/TerzaDisplay-Regular.woff2?v=36" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="fonts/Metrim-Regular.woff2?v=36" as="font" type="font/woff2" crossorigin>
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=37">
+<link rel="icon" type="image/png" href="icons/icon-192.png?v=37">
+<link rel="preload" href="fonts/TerzaDisplay-Regular.woff2?v=37" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/Metrim-Regular.woff2?v=37" as="font" type="font/woff2" crossorigin>
 <style>
 /* Layout: warm graphite soft-UI phone app, red accent. Glass cards, Swole breaking out over the hero card's top edge, pill CTAs with teal glow, floating icon tab bar. Single committed dark look. */
 :root{
@@ -960,8 +960,8 @@ html.ob-open,html.ob-open body{overflow:hidden}
 .obsum{display:flex;flex-wrap:wrap;gap:8px}.obsum span{background:#EDEDED;border-radius:999px;padding:8px 12px;font:600 13px var(--f)}
 
 /* ================= v35 · black & white. Metrim logo, Terza Display for the rest ================= */
-@font-face{font-family:"Metrim";src:url("fonts/Metrim-Regular.woff2?v=36") format("woff2");font-display:block}
-@font-face{font-family:"Terza Display";src:url("fonts/TerzaDisplay-Regular.woff2?v=36") format("woff2");font-display:swap}
+@font-face{font-family:"Metrim";src:url("fonts/Metrim-Regular.woff2?v=37") format("woff2");font-display:block}
+@font-face{font-family:"Terza Display";src:url("fonts/TerzaDisplay-Regular.woff2?v=37") format("woff2");font-display:swap}
 :root{
   --fd:"Terza Display","Iowan Old Style",Georgia,serif;
   --logo:"Metrim","Terza Display",Georgia,serif;
@@ -1024,6 +1024,9 @@ input,textarea,select,button{font-family:var(--fd)}
 .obinput:focus,.obinput.obpill:focus,.auth input:focus{box-shadow:none;border-width:2px}
 .yinfo .sbig{font-size:min(48px,11vw);overflow-wrap:anywhere}
 .h3say{top:calc(env(safe-area-inset-top,0px) + 76px + 93vw*.31 + 18px);width:min(40vw,200px)}
+/* v37: buttons on black cards. The main one is white, the others get a white outline */
+.block .btn.red,.test .btn.red,.logbox .btn.red,.phase .btn.red{background:#FFFFFF;color:#000000;box-shadow:none}
+.block .btn:not(.red),.test .btn:not(.red),.logbox .btn:not(.red),.phase .btn:not(.red){background:transparent;color:#FFFFFF;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.6)}
 /* the Path: today is the only filled black node; done nodes are outlined */
 .pnode.done{background:#FFFFFF;color:#000000;box-shadow:inset 0 0 0 3px #000000,0 7px 0 #000000}
 .pnode.part{background:#FFFFFF;color:#000000;box-shadow:inset 0 0 0 3px #000000,0 7px 0 #000000;opacity:.6}
@@ -1056,14 +1059,14 @@ input,textarea,select,button{font-family:var(--fd)}
 </nav></div>
 <div class="sheet" id="sheet" hidden><div class="in" id="sheetIn"></div></div>
 <div class="toast" id="toast" hidden></div>
-<script src="plan.js?v=36"></script>
-<script src="locker.js?v=36"></script>
-<script src="social.js?v=36"></script>
-<script src="gen.js?v=36"></script>
-<script src="sb.js?v=36"></script>
-<script src="draw.js?v=36"></script>
-<script src="path.js?v=36"></script>
-<script src="app.js?v=36"></script>
-<script src="onboarding.js?v=36"></script>
+<script src="plan.js?v=37"></script>
+<script src="locker.js?v=37"></script>
+<script src="social.js?v=37"></script>
+<script src="gen.js?v=37"></script>
+<script src="sb.js?v=37"></script>
+<script src="draw.js?v=37"></script>
+<script src="path.js?v=37"></script>
+<script src="app.js?v=37"></script>
+<script src="onboarding.js?v=37"></script>
 </body>
 </html>

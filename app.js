@@ -578,14 +578,14 @@ async function openSettings(){
       <h3>Morning reminder<small>06:05 every day</small></h3>
       <p class="verdict-l" style="text-align:left;max-width:none;margin:6px 0 10px">${
         ps === "on" ? "On. Swole will tell you what today holds and ask you to check in."
-        : ps === "denied" ? "Notifications are blocked. Turn them on in iOS Settings → Notifications → Swole."
+        : ps === "denied" ? "Your phone has blocked notifications for this copy of Swole, and it can't ask again. Remove Swole from your Home Screen, add it again from app.joinswole.com in Safari, then tap Turn on reminder here."
         : ps === "unsupported" && !isStandalone() ? "Add Swole to your Home Screen first (Share → Add to Home Screen) and open it from there."
         : "Get a push at 06:05 with today's sessions and a nudge to check in."}</p>
-      ${ps === "on" ? "" : `<div style="margin-bottom:12px"><button class="btn red" data-act="pushon" ${ps === "denied" ? "disabled" : ""}>Turn on reminder</button></div>`}
+      ${ps === "on" || ps === "denied" ? "" : `<div style="margin-bottom:12px"><button class="btn red" data-act="pushon">Turn on reminder</button></div>`}
     </div>`}
 
     <div class="block">
-      <h3>App<small>v36 · PWA</small></h3>
+      <h3>App<small>v37 · PWA</small></h3>
       <p class="verdict-l" style="text-align:left;max-width:none;margin:6px 0 12px">${isStandalone() ? "Running from your Home Screen." : "Tip: Share → Add to Home Screen for full-screen and reminders."}<br><small style="opacity:.6">Screen ${(window.__vp||{}).screen} · view ${(window.__vp||{}).inner} · inset ${(window.__vp||{}).envB} · gap ${(window.__vp||{}).gap}</small></p>
     </div>`);
 }
