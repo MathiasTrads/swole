@@ -3,10 +3,10 @@
    unlock: {type: "start" | "checkins" | "streak" | "sessions" | "tests" | "week", n}
    look (optional): media file for a Swole render wearing this item. */
 const RARITY = {
-  common:    {label: "Common",    c: "#A3A9AE"},
-  rare:      {label: "Rare",      c: "#3EA6FF"},
-  epic:      {label: "Epic",      c: "#B76CFF"},
-  legendary: {label: "Legendary", c: "#FFB020"},
+  common:    {label: "Common",    c: "#BDBDBD"},
+  rare:      {label: "Rare",      c: "#8A8A8A"},
+  epic:      {label: "Epic",      c: "#4A4A4A"},
+  legendary: {label: "Legendary", c: "#000000"},
 };
 const SLOTS = {
   top: "Top", shorts: "Shorts", wraps: "Hand wraps", gloves: "Gloves", shins: "Shin guards",

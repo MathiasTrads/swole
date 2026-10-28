@@ -151,7 +151,7 @@ async function enablePush(){
 
 /* ============ SWOLE (drawn fallback) ============ */
 function swoleSVG(mood){
-  const P = "#F3EEE7", K = "#14181B", R = "#E5322D";
+  const P = "#FFFFFF", K = "#000000", R = "#000000";
   const uid = "s"+Math.random().toString(36).slice(2,7);
   const brows = mood === "stern"
     ? `<path d="M77 90 L96 99" /><path d="M123 90 L104 99" />`
@@ -334,7 +334,7 @@ function viewHome(){
   const nu = newUnlocks().length;
   return `
   <section class="home3">
-    <svg class="bigword" viewBox="0 0 1000 500" aria-hidden="true"><text x="0" y="492" textLength="1000" lengthAdjust="spacingAndGlyphs">SWOLE</text></svg>
+    <svg class="bigword" viewBox="0 0 1000 310" aria-hidden="true"><text x="500" y="226" text-anchor="middle" textLength="990" lengthAdjust="spacingAndGlyphs">SWOLE</text></svg>
     <div class="h3fig">${outfitLook() ? `<img src="${outfitLook()}" alt="Swole">` : art ? mediaTag(art) : swoleSVG(mood)}</div>
     <p class="h3say"><b>Report says:</b> ${lines.map(esc).join(" ")}</p>
     ${topBar(false, nu)}
@@ -564,8 +564,8 @@ async function openSettings(){
     <div class="phero set"><h1 class="sh-title">Swole setup</h1><img src="${POSE("bench")}" alt=""></div>
 
     <div class="block">
-      <h3>Look<small>${theme() === "red" ? "Red" : "White"}</small></h3>
-      <div class="opts" style="margin:8px 0 12px"><button class="opt" data-theme="white" aria-pressed="${theme() !== "red"}">White</button><button class="opt" data-theme="red" aria-pressed="${theme() === "red"}">Red</button><button class="opt" data-act="replayintro">Replay intro</button></div>
+      <h3>Look<small>Black &amp; white</small></h3>
+      <div class="opts" style="margin:8px 0 12px"><button class="opt" data-act="replayintro">Replay intro</button></div>
     </div>
 
     ${window.SWOLE_DEMO ? demoSettingsBlock() : sbSettingsBlock()}
@@ -586,7 +586,7 @@ async function openSettings(){
     </div>`}
 
     <div class="block">
-      <h3>App<small>v27 · PWA</small></h3>
+      <h3>App<small>v35 · PWA</small></h3>
       <p class="verdict-l" style="text-align:left;max-width:none;margin:6px 0 12px">${isStandalone() ? "Running from your Home Screen." : "Tip: Share → Add to Home Screen for full-screen and reminders."}<br><small style="opacity:.6">Screen ${(window.__vp||{}).screen} · view ${(window.__vp||{}).inner} · inset ${(window.__vp||{}).envB} · gap ${(window.__vp||{}).gap}</small></p>
     </div>`);
 }
@@ -791,8 +791,8 @@ document.addEventListener("click", async e => {
 });
 
 /* ============ THEME ============ */
-function theme(){ return (S.settings.look && S.settings.look.theme) || LS.get("swole:theme", "white"); }
-function applyTheme(){ const t = theme(); document.documentElement.dataset.theme = t; const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = t === "red" ? "#FF3B2F" : "#FFFFFF"; }
+function theme(){ return "white"; }
+function applyTheme(){ const t = theme(); document.documentElement.dataset.theme = t; const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = "#FFFFFF"; }
 async function setTheme(t){ LS.set("swole:theme", t); applyTheme(); await save("settings", "look", {theme:t}); }
 
 /* ============ MOMENTS ============ */
@@ -844,7 +844,7 @@ window.addEventListener("orientationchange", () => setTimeout(fitViewport, 300))
 /* ============ BOOT ============ */
 (function splash(){
   const el = document.createElement("div"); el.id = "splash";
-  el.innerHTML = `<svg viewBox="0 0 1000 420" aria-label="Swole"><text x="500" y="400" text-anchor="middle" textLength="980" lengthAdjust="spacingAndGlyphs">SWOLE</text></svg>`;
+  el.innerHTML = `<svg viewBox="0 0 1000 310" aria-label="Swole"><text x="500" y="226" text-anchor="middle" textLength="990" lengthAdjust="spacingAndGlyphs">SWOLE</text></svg>`;
   document.body.appendChild(el);
   const go = () => { el.classList.add("out"); setTimeout(() => el.remove(), 450); };
   (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(() => setTimeout(go, 900));
@@ -852,6 +852,7 @@ window.addEventListener("orientationchange", () => setTimeout(fitViewport, 300))
 })();
 applyTheme();
 fitViewport();
+watchWords();
 render();
 if (!LS.get("swole:introSeen", false)){ LS.set("swole:introSeen", true); playMoment("intro"); }
 setTimeout(preloadMoments, 2500);
@@ -862,3 +863,20 @@ loadAll().then(() => {
   if (!window.SWOLE_DEMO && !window.SWOLE_PROFILE && p && p.onboarded && !sessionStorage.getItem("swole:profReload")){ sessionStorage.setItem("swole:profReload", "1"); location.reload(); return; }
   render();
 });
+
+/* v35: Terza Display is wider than the old condensed face. Size poster words to their slot instead of squashing the letters. */
+function fitWords(){
+  document.querySelectorAll("svg.vword text, svg.mword text, svg.dword text, svg.fword text").forEach(t => {
+    if (t.dataset.fit) return;
+    const L = parseFloat(t.getAttribute("textLength")); if (!L) return;
+    t.removeAttribute("textLength"); t.removeAttribute("lengthAdjust");
+    const w = t.getComputedTextLength(), fs = parseFloat(getComputedStyle(t).fontSize);
+    if (!w || !fs){ t.setAttribute("textLength", L); t.setAttribute("lengthAdjust", "spacingAndGlyphs"); return; }
+    t.style.fontSize = (fs * Math.min(L / w, 0.8)) + "px"; t.dataset.fit = 1;
+  });
+}
+function watchWords(){
+  let q = 0; const run = () => { q = 0; fitWords(); };
+  new MutationObserver(() => { if (!q) q = requestAnimationFrame(run); }).observe(document.body, {childList: true, subtree: true});
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { document.querySelectorAll("svg [data-fit]").forEach(t => t.removeAttribute("data-fit")); run(); });
+}

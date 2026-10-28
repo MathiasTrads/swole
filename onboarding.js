@@ -139,7 +139,7 @@ function swolePrompt(v){
     + deep
     + "Refined seinen anime illustration exactly in the style reference: crisp fine black linework, soft cel shading with gentle tonal steps, natural realistic facial structure, subtle skin texture. "
     + `Eyes: natural almond-shaped, slightly narrowed and relaxed, strong upper lash line, detailed ${AVW.eyes[v.eyes]} iris with a small soft highlight, defined brows sitting low. `
-    + "Calm, quietly confident expression. Flat solid red background (#FF3B2F), soft dark floor shadow. No props. Original character. No text, no logos, no watermark.";
+    + "Calm, quietly confident expression. Flat solid white background, soft dark floor shadow. No props. Original character. No text, no logos, no watermark.";
 }
 /* the ready-made Swole closest to the traits: shown while the member's own Swole is being drawn */
 const ROSTER_TRAITS = {
@@ -250,10 +250,11 @@ function habitRotate(){
 function obView(st){
   const name = OB.a.name ? esc(OB.a.name) : "";
   if (st === "welcome") return `
-    <div class="obwel"><h1 class="obbig obhab">Steady habits beat <span class="obrot" aria-live="off">${HABIT_WORDS[0]}</span></h1>
-    <p class="obp obsub">Your path lies before you.</p>
-    <button class="pill wide" data-ob="go:email">Get started</button>
-    <button class="oblink" data-ob="go:email">I already have an account</button></div>`;
+    <div class="obwel v35">
+      <svg class="obwordmark" viewBox="0 0 1000 310" role="img" aria-label="Swole"><text x="500" y="226" text-anchor="middle" textLength="990" lengthAdjust="spacingAndGlyphs">SWOLE</text></svg>
+      <p class="obtag">Commit to your own path</p>
+      <div class="obwelbtns"><button class="pill wide" data-ob="go:email">Log in</button>
+      <button class="oblink" data-ob="go:email">Sign-up</button></div></div>`;
   if (st === "email") return `
     <h2 class="obh">What's your email?</h2><p class="obp">We'll send you a code. No password to remember.</p>
     <input class="obinput" id="obEmail" type="email" inputmode="email" autocomplete="email" autocapitalize="off" placeholder="you@example.com" value="${esc(OB.email)}">

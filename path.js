@@ -29,7 +29,7 @@ function coachLine(phKey){
   return /^d|jul/.test(phKey) ? c.deload : (phKey === "test" ? c.test : /rt|end/.test(phKey) ? c.retest : c.build);
 }
 const PATH_SKIP = new Set(["mobil"]);          /* optional sessions stay off the path */
-const PCOLOR = { test:"#141010", f1:"#FF3B2F", d1:"#6E6564", f2:"#FF3B2F", jul:"#2E7D4F", rt1:"#141010", f3:"#FF3B2F", d2:"#6E6564", f4:"#FF3B2F", d3:"#141010", f5:"#FF3B2F", end:"#141010" };
+const PCOLOR = { test:"#000000", f1:"#000000", d1:"#6E6564", f2:"#000000", jul:"#000000", rt1:"#000000", f3:"#000000", d2:"#6E6564", f4:"#000000", d3:"#000000", f5:"#000000", end:"#000000" };
 const LEK_SAYS = {
   test:"First we measure. No ego, just numbers.",
   f1:"Knees first, then we jump. Slow is smooth.",
@@ -105,7 +105,7 @@ function viewPath(){
     if (n.ph !== lastPh){
       lastPh = n.ph;
       const deload = n.ph.deload || n.ph.key === "jul";
-      html += `<div class="pphase" style="--pc:${PCOLOR[n.ph.key] || "#FF3B2F"}" data-pw="${n.w}">
+      html += `<div class="pphase" style="--pc:${PCOLOR[n.ph.key] || "#000000"}" data-pw="${n.w}">
         <span>${n.ph.w[0] === n.ph.w[1] ? "Week "+n.ph.w[0] : "Weeks "+n.ph.w[0]+"–"+n.ph.w[1]}${deload ? " · rest camp" : ""}</span>
         <b>${deload ? `<i class="pfire">${PICON.fire}</i>` : ""}${esc(n.ph.name)}</b>
         <em>${esc(n.ph.focus[0])}</em></div>`;
@@ -123,14 +123,14 @@ function viewPath(){
     const bubble = i === cur ? `<span class="pstart">${iso(n.d) === iso(new Date()) ? "TODAY" : "START"}</span>` : "";
     const lek = i === cur ? `<div class="plek ${lekSide}"><div class="psay"><b>${esc(PROGRAM.by)}</b>${esc(coachLine(n.ph.key))}</div><img src="${castImg(PROGRAM.trainer)}" alt="${esc(PROGRAM.by)}"></div>` : "";
     html += `<div class="prow ${i === cur ? "iscur" : ""}" style="--x:${x}px" ${i === cur ? 'id="pcur"' : ""}>${lek}
-      <button class="pnode ${n.state} ${boss ? "boss" : ""}" style="--pc:${PCOLOR[n.ph.key] === "#6E6564" ? "#FF3B2F" : (PCOLOR[n.ph.key] || "#FF3B2F")}" data-pnode="${n.key}|${n.id}" aria-label="${esc(SESS[n.id].title)}, ${DAY[dow(n.d)]} ${fmt(n.d)}">
+      <button class="pnode ${n.state} ${boss ? "boss" : ""}" style="--pc:${PCOLOR[n.ph.key] === "#6E6564" ? "#000000" : (PCOLOR[n.ph.key] || "#000000")}" data-pnode="${n.key}|${n.id}" aria-label="${esc(SESS[n.id].title)}, ${DAY[dow(n.d)]} ${fmt(n.d)}">
         ${bubble}<span class="pface">${icon}</span>${n.state === "current" ? `<span class="pring"></span>` : ""}</button>
       ${starRow}${g}
       <span class="plabel">${DAY[dow(n.d)]} ${n.d.getDate()}/${n.d.getMonth()+1} · ${esc(SESS[n.id].title.split(" · ")[0])}</span></div>`;
   });
   const pct = Math.round(done / sess.length * 100);
   return `
-  <div class="phead" id="phead" style="--pc:${PCOLOR[curN.ph.key] || "#FF3B2F"}">
+  <div class="phead" id="phead" style="--pc:${PCOLOR[curN.ph.key] || "#000000"}">
     <div class="phtop">${head(PROGRAM.trainer, 40)}<div class="phtxt"><span id="phsec">${esc(PROGRAM.by)} · ${esc(PROGRAM.name)}</span><b id="phunit">Week ${curN.w} · ${esc(curN.ph.name)}</b></div>
       <div class="phstat"><i>${PICON.star}</i>${stars}</div></div>
     <div class="phbar"><i style="width:${Math.max(2,pct)}%"></i></div>
@@ -155,7 +155,7 @@ function pathSync(){
   if (w == null) w = 1;
   const ph = phaseOf(w); if (!ph) return;
   const u = document.getElementById("phunit"); const t = `Week ${w} · ${ph.name}`;
-  if (u && u.textContent !== t){ u.textContent = t; h.style.setProperty("--pc", PCOLOR[ph.key] || "#FF3B2F"); }
+  if (u && u.textContent !== t){ u.textContent = t; h.style.setProperty("--pc", PCOLOR[ph.key] || "#000000"); }
 }
 let pathRaf = 0;
 window.addEventListener("scroll", () => { if (pathRaf) return; pathRaf = requestAnimationFrame(() => { pathRaf = 0; pathSync(); }); }, {passive:true});

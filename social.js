@@ -81,13 +81,13 @@ const FRIENDS = [
 const TEAM_GOAL = {text: "Nak Muay logs 100 sessions in October", have: 63, need: 100, reward: {name: "Team fight shorts", rarity: "epic", img: "media/items/shorts-fist.webp"}};
 
 const POSTS = [
-  {id: "p1", type: "drop", by: "lek", kind: "Drill", title: "Teep, then step off the line", body: "Three rounds on the bag: teep, angle out left, rear kick. Don't admire the teep. Move.", dur: "0:24", tint: "#141010", respect: 128},
+  {id: "p1", type: "drop", by: "lek", kind: "Drill", title: "Teep, then step off the line", body: "Three rounds on the bag: teep, angle out left, rear kick. Don't admire the teep. Move.", dur: "0:24", tint: "#111111", respect: 128},
   {id: "p2", type: "flex", by: "mia", kind: "Streak", title: "23-day streak", body: "Three weeks without a missed morning.", respect: 54},
-  {id: "p3", type: "drop", by: "elin", kind: "Program", title: "Engine 6", body: "6 weeks, 3 × 30 min. Intervals that make your rounds feel shorter. Finish it and unlock Elin's hoodie.", dur: "6 wk", program: {id: "engine6", weeks: 6, perWeek: 3}, signature: {name: "Elin's hoodie", rarity: "epic"}, tint: "#FF3B2F", respect: 302},
+  {id: "p3", type: "drop", by: "elin", kind: "Program", title: "Engine 6", body: "6 weeks, 3 × 30 min. Intervals that make your rounds feel shorter. Finish it and unlock Elin's hoodie.", dur: "6 wk", program: {id: "engine6", weeks: 6, perWeek: 3}, signature: {name: "Elin's hoodie", rarity: "epic"}, tint: "#747474", respect: 302},
   {id: "p4", type: "flex", by: "kasper", kind: "Unlock", title: "Unlocked Barong gloves", body: "Sixty sessions. They're heavy.", item: "gloves-barong", respect: 87},
-  {id: "p5", type: "drop", by: "dale", kind: "Motivation", title: "Heat is a skill", body: "Two minutes longer than you want. Breathe through the nose. Then cold. That's recovery, not a reward.", tint: "#3A2A22", respect: 61},
+  {id: "p5", type: "drop", by: "dale", kind: "Motivation", title: "Heat is a skill", body: "Two minutes longer than you want. Breathe through the nose. Then cold. That's recovery, not a reward.", tint: "#2E2E2E", respect: 61},
   {id: "p6", type: "flex", by: "noor", kind: "PR", title: "New PR · 10 km in 46:20", body: "Fastest yet. Sub-45 is coming.", respect: 143},
-  {id: "p7", type: "drop", by: "fred", kind: "Program", title: "Zero to court-ready", body: "4 weeks for total beginners: footwork, the bandeja and not running into the glass.", dur: "4 wk", program: {id: "court4", weeks: 4, perWeek: 2}, tint: "#1B2A4A", respect: 77},
+  {id: "p7", type: "drop", by: "fred", kind: "Program", title: "Zero to court-ready", body: "4 weeks for total beginners: footwork, the bandeja and not running into the glass.", dur: "4 wk", program: {id: "court4", weeks: 4, perWeek: 2}, tint: "#292929", respect: 77},
   {id: "p8", type: "flex", by: "jonas", kind: "Week done", title: "Week 3 on plan", body: "Still can't do a pull-up. Yet.", respect: 39},
 ];
 const DIRECTORY = [
@@ -184,7 +184,7 @@ function postCard(p){
   const hdr = `<div class="phd">${p.by === "me" ? myHead(34) : head(p.by, 34)}<div><b>${esc(who.name)}</b>${CAST[p.by] && CAST[p.by].role === "trainer" ? `<span class="tbadge">Trainer</span>` : ""}<small>@${esc(who.handle)} · ${esc(p.kind)}</small></div></div>`;
   if (p.type === "drop"){
     return `<article class="post drop">${hdr}
-      <div class="dmedia" style="--tint:${p.tint || "#141010"}">
+      <div class="dmedia" style="--tint:${p.tint || "#111111"}">
         <svg class="dword" viewBox="0 0 1000 300" aria-hidden="true"><text x="0" y="280" textLength="1000" lengthAdjust="spacingAndGlyphs">${esc(p.kind.toUpperCase())}</text></svg>
         <div class="dfig">${body(p.by)}</div>
         ${p.dur ? `<span class="ddur">${p.kind === "Drill" ? ICO.play : ""}${esc(p.dur)}</span>` : ""}
