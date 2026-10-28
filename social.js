@@ -177,7 +177,7 @@ function viewFeed(){
 let feedFilter = "all";
 function postCard(p){
   const r = SOC.get("respect", {}), mine = !!r[p.id], n = (p.respect || 0) + (mine ? 1 : 0);
-  const who = p.by === "me" ? {name: "You", handle: "mathias"} : CAST[p.by];
+  const who = p.by === "me" ? {name: "You", handle: myHandle()} : CAST[p.by];
   const added = SOC.get("programs", {});
   const foot = `<div class="pfoot"><button class="resp" data-respect="${p.id}" aria-pressed="${mine}">${ICO.fist}<span>${n}</span></button>
     ${p.program ? `<button class="addp" data-addprog="${p.program.id}" data-title="${esc(p.title)}" data-by="${esc(who.name)}" aria-pressed="${!!added[p.program.id]}">${added[p.program.id] ? "In your plan ✓" : "Add to my plan"}</button>` : ""}</div>`;
@@ -256,8 +256,8 @@ function viewYou(){
   <section class="youhero">
     <div class="yfig">${outfitLook() ? `<img src="${outfitLook()}" alt="">` : mediaTag(BUILTIN)}</div>
     <div class="yinfo">
-      <span class="eyebrow">@mathias · ${esc(GYM.name)}</span>
-      <h1 class="sbig">Mathias</h1>
+      <span class="eyebrow">@${esc(myHandle())}${myGym() ? ` · ${esc(myGym())}` : ""}</span>
+      <h1 class="sbig">${esc(myName())}</h1>
       <div class="lvl"><b>${m.wk >= 1 ? `Week ${m.wk} of ${PLAN_WEEKS}` : "Plan starts Monday"}</b><span>${esc(m.phase)}</span></div>
       <div class="bar"><i style="width:${pct}%"></i></div><small class="mut">${m.planned ? `${m.onPlan} % of planned sessions done` : "Your plan, one week at a time"}</small>
       <div class="pst"><span><b>${m.cur}</b>streak</span><span><b>${m.sessions}</b>sessions</span><span><b>${m.owned}</b>items</span></div>
@@ -316,3 +316,21 @@ document.addEventListener("input", e => {
   searchQ = e.target.value;
   document.getElementById("sres").innerHTML = searchResults(currentResults(), SOC.get("follow", {}));
 });
+
+/* v36: the member's own name, not Mathias'. Profile name from sign-up, else the account name, else "You". */
+function myName(){
+  const P = window.SWOLE_PROFILE, sp = typeof SB !== "undefined" && SB.profile;
+  if (P && P.name) return P.name;
+  if (sp && sp.display_name && !P) return sp.display_name;
+  return P ? "You" : "Mathias";
+}
+function myHandle(){
+  const P = window.SWOLE_PROFILE, sp = typeof SB !== "undefined" && SB.profile;
+  if (!(P && P.name) && sp && sp.handle) return sp.handle;
+  return myName().toLowerCase().normalize("NFD").replace(/[^a-z0-9]+/g, "") || "you";
+}
+function myGym(){
+  const P = window.SWOLE_PROFILE;
+  if (P) return (P.gyms && P.gyms[0]) || "";
+  return GYM.name;
+}

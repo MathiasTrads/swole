@@ -253,14 +253,14 @@ function readiness(ci){
   return {score, level, food, knee:(ci.knee||0) >= 2};
 }
 const LEVEL = {
-  g:{word:"Ready", slot:"klar", color:"var(--ok)", mood:"grin", line:"Green light. Run the plan as written."},
-  y:{word:"Dial down", slot:"skru", color:"var(--warn)", mood:"neutral", line:"Yellow. We train, but dial it down: one set less on the heavy lifts, no max sprints."},
-  r:{word:"Recover", slot:"rest", color:"var(--bad)", mood:"stern", line:"Red. Today you rebuild with mobility and easy zone 2. That's training too."},
+  g:{word:"Ready", slot:"klar", color:"var(--ok)", mood:"grin", line:"Green light. Train as planned."},
+  y:{word:"Dial down", slot:"skru", color:"var(--warn)", mood:"neutral", line:"Take it a bit easier today. Train, but keep some energy in the tank."},
+  r:{word:"Recover", slot:"rest", color:"var(--bad)", mood:"stern", line:"Rest and recover today. An easy walk or some light movement is plenty."},
 };
 function foodLine(f){
-  if (f >= 4) return "Food looks solid. Keep it up.";
-  if (f >= 2) return "You want to gain weight. Add one more meal and get protein in all of them.";
-  return "You won't build muscle on that. Today: 4 meals, a palm of protein in each.";
+  if (f >= 4) return "Food looks good.";
+  if (f >= 2) return "Eat regular meals today, with some protein in each.";
+  return "Make sure you eat enough today.";
 }
 
 const ICON = {
@@ -317,7 +317,7 @@ function viewHome(){
   if (r){
     const L = LEVEL[r.level]; word = L.word; mood = L.mood; slot = L.slot;
     lines.push(L.line);
-    if (r.knee) lines.push("The knee says no. No jumps today. Isometrics instead.");
+    if (r.knee) lines.push("Something hurts? Go easy and skip what makes it worse.");
     lines.push(foodLine(r.food));
   } else if (w < 1){
     word = "Soon";
@@ -336,7 +336,6 @@ function viewHome(){
   <section class="home3">
     <svg class="bigword" viewBox="0 0 1000 310" aria-hidden="true"><text x="500" y="226" text-anchor="middle" textLength="990" lengthAdjust="spacingAndGlyphs">SWOLE</text></svg>
     <div class="h3fig">${outfitLook() ? `<img src="${outfitLook()}" alt="Swole">` : art ? mediaTag(art) : swoleSVG(mood)}</div>
-    <p class="h3say"><b>Report says:</b> ${lines.map(esc).join(" ")}</p>
     ${topBar(false, nu)}
     <div class="card2 h3today">
       <div class="today2-h"><button class="hubopen" data-hub="path"><h2>Today</h2><i>Path ›</i></button><span>Tomorrow · ${tItems.length ? tItems.map(it => esc(SESS[it.id].title.split(" · ")[0])).join(" + ") : "Rest"}</span></div>
@@ -438,7 +437,7 @@ function viewSchedule(){
         <div class="c">${items.length ? items.map(it => { const s = SESS[it.id], key = iso(dd)+"_"+it.slot;
           return `<button class="mini" data-open="${key}|${it.id}"><i>${it.slot === "am" ? "AM" : "PM"}</i><span class="tt">${esc(s.title)}</span>${statusChip(key)}</button>`; }).join("") : `<span class="eyebrow" style="padding:8px 0">Rest</span>`}</div>`;
     }
-    body = `${ph && ph.deload ? `<div class="banner y">Deload week. 50–60 % of normal volume, no max sprints.</div>` : ""}
+    body = `${ph && ph.deload ? `<div class="banner y">Deload week. Lighter than usual, so your body can catch up.</div>` : ""}
       ${ph && ph.key === "jul" ? `<div class="banner n">Christmas. The gym may be closed. Do the 3 short sessions and enjoy the rest.</div>` : ""}
       <div class="wk">${rows}</div>`;
   } else if (schedMode === "month"){
@@ -586,7 +585,7 @@ async function openSettings(){
     </div>`}
 
     <div class="block">
-      <h3>App<small>v35 · PWA</small></h3>
+      <h3>App<small>v36 · PWA</small></h3>
       <p class="verdict-l" style="text-align:left;max-width:none;margin:6px 0 12px">${isStandalone() ? "Running from your Home Screen." : "Tip: Share → Add to Home Screen for full-screen and reminders."}<br><small style="opacity:.6">Screen ${(window.__vp||{}).screen} · view ${(window.__vp||{}).inner} · inset ${(window.__vp||{}).envB} · gap ${(window.__vp||{}).gap}</small></p>
     </div>`);
 }
@@ -733,7 +732,7 @@ async function saveCI(){
     <section class="verdict3">
       <div class="vfig"><svg class="vword" viewBox="0 0 1000 300" aria-hidden="true"><text x="500" y="270" text-anchor="middle" textLength="${Math.min(1000, L.word.length*150)}" lengthAdjust="spacingAndGlyphs">${esc(L.word.toUpperCase())}</text></svg>${mediaTag(art)}</div>
       <div class="vcard"><div class="vhead"><img class="emo lg" src="${EMO(emo)}" alt=""><div><b style="color:${L.color}">${esc(L.word)}</b><span>Readiness ${Math.round(r.score*10)/10} / 8</span></div></div>
-      <p>${esc(L.line)}</p>${r.knee ? `<p>The knee says no. No jumps today.</p>` : ""}<p>${esc(foodLine(r.food))}</p>
+      <p>${esc(L.line)}</p>${r.knee ? `<p>Something hurts? Go easy and skip what makes it worse.</p>` : ""}<p>${esc(foodLine(r.food))}</p>
       <button class="pill wide" data-act="close">To today's sessions</button></div>
     </section>`;
   if (r.level !== "r") playMoment("kick", {word: r.level === "g" ? "LET'S GO" : "EASY NOW", sub: L.line});

@@ -297,7 +297,7 @@ function obView(st){
   if (st === "intake"){
     const log = OB_Q.slice(0, OB.qi).map(obQ).map(q => `<div class="obmsg c">${esc(q.q.replace("{name}", name))}</div><div class="obmsg u">${esc(obAns(q))}</div>`).join("");
     const q = obQ(OB_Q[OB.qi]);
-    const intro = `<div class="obmsg c">${esc(OB.goal.label)}. Love it. A few quick questions and I'll build your plan.</div>`;
+    const intro = `<div class="obmsg c">${esc(OB.goal.label)}. Got it. A few quick questions and I'll build your plan.</div>`;
     let input = "";
     if (q.type === "text") input = `<div class="obin"><input class="obinput sm" id="obA" placeholder="${esc(q.ph)}" autocapitalize="words"><button class="obsend" data-ob="ans">→</button></div>`;
     if (q.type === "number") input = `<div class="obin"><input class="obinput sm" id="obA" type="number" inputmode="decimal" min="${q.min}" max="${q.max}" placeholder="${esc(q.unit)}"><button class="obsend" data-ob="ans">→</button></div>${q.skip ? `<button class="oblink" data-ob="skipq">Skip</button>` : ""}`;
