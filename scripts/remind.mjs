@@ -23,7 +23,10 @@ if (!FORCE) {
 }
 
 // Today's plan, from the same plan.js the app uses.
-const ctx = vm.createContext({console});
+// plan.js is written for the browser (it reads window/localStorage for a member's own profile since v26).
+// Give it empty stand-ins, so it falls back to Mathias' own plan instead of crashing.
+const mem = {};
+const ctx = vm.createContext({console, window: {}, localStorage: {getItem: k => (k in mem ? mem[k] : null), setItem: (k, v) => { mem[k] = String(v); }, removeItem: k => { delete mem[k]; }}});
 const P = vm.runInContext(fs.readFileSync("plan.js", "utf8") + "\n;({plannedFor, SESS, weekNo, phaseOf, slotTime})", ctx);
 const today = new Date(new Date().toLocaleString("en-US", {timeZone: "Europe/Copenhagen"}));
 const items = P.plannedFor(today);
