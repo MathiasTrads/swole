@@ -1,11 +1,23 @@
-name: Morning reminder
+name: Reminders
 on:
   schedule:
-    # GitHub often starts scheduled runs late, so we start ~90 min early and the script waits until 06:05.
-    - cron: "35 2 * * *"   # summer time (CEST): 04:35 local
-    - cron: "35 3 * * *"   # winter time (CET): 04:35 local
+    # GitHub often starts scheduled runs late, so each slot starts ~90 min early and the script waits.
+    # Two lines per slot: summer time (CEST) and winter time (CET). The script runs only the right one.
+    - cron: "35 2 * * *"   # morning 06:05 · summer
+    - cron: "35 3 * * *"   # morning 06:05 · winter
+    - cron: "0 9 * * *"    # lunch 12:30 · summer
+    - cron: "0 10 * * *"   # lunch 12:30 · winter
+    - cron: "0 14 * * *"   # evening 17:30 · summer
+    - cron: "0 15 * * *"   # evening 17:30 · winter
+    - cron: "0 18 * * *"   # bedtime 21:30 · summer
+    - cron: "0 19 * * *"   # bedtime 21:30 · winter
   workflow_dispatch:
     inputs:
+      slot:
+        description: "Which reminder"
+        type: choice
+        options: [morning, lunch, evening, bed]
+        default: morning
       force:
         description: "Send now, whatever the time"
         type: boolean
@@ -29,4 +41,5 @@ jobs:
           VAPID_PRIVATE: ${{ secrets.VAPID_PRIVATE }}
           DATA_REPO: ${{ github.repository_owner }}/swole-data
           SCHEDULE: ${{ github.event.schedule }}
+          SLOT: ${{ github.event_name == 'workflow_dispatch' && inputs.slot || '' }}
           FORCE: ${{ github.event_name == 'workflow_dispatch' && inputs.force && '1' || '' }}
