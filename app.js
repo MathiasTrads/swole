@@ -552,6 +552,21 @@ function openSheet(html){ document.getElementById("sheetIn").innerHTML = html; c
 function closeSheetQuiet(){ stopTimer(); document.getElementById("sheet").hidden = true; }
 function closeSheet(){ stopTimer(); document.getElementById("sheet").hidden = true; render(); }
 
+/* v38 reminders: the 06:05 one plus three that only send when they're useful (scripts/remind.mjs decides).
+   Choices live in settings.reminders so the sender can read them. Default: all on. */
+const REMINDERS = [
+  {id:"lunch",   label:"Lunch",   when:"12:30 · only if you haven't checked in"},
+  {id:"evening", label:"Evening", when:"17:30 · only on days with a planned session you haven't logged"},
+  {id:"bed",     label:"Bedtime", when:"21:30 · log today, or a nudge to wind down"},
+];
+const remPrefs = () => (S.settings && S.settings.reminders) || {};
+const remOn = id => remPrefs()[id] !== false;
+document.addEventListener("change", async e => {
+  const c = e.target.closest("[data-rem]"); if (!c) return;
+  await save("settings", "reminders", {...remPrefs(), [c.dataset.rem]: c.checked});
+  toast(c.checked ? "Reminder on." : "Reminder off.");
+});
+
 /* settings */
 async function openSettings(){
   const ps = await pushState();
@@ -567,6 +582,12 @@ async function openSettings(){
       <div class="opts" style="margin:8px 0 12px"><button class="opt" data-act="replayintro">Replay intro</button></div>
     </div>
 
+    ${window.SWOLE_PROFILE || window.SWOLE_DEMO ? `<div class="block">
+      <h3>Your plan<small>${esc((window.SWOLE_PROFILE && window.SWOLE_PROFILE.program) || "")}</small></h3>
+      <p class="verdict-l" style="text-align:left;max-width:none;margin:6px 0 10px">Goal changed, or the plan doesn't fit your level? Answer the questions again and get a new plan. Your Swole, check-ins and history stay.</p>
+      <div style="margin-bottom:12px"><button class="btn ghost" data-act="rebuildplan">Rebuild my plan</button></div>
+    </div>` : ""}
+
     ${window.SWOLE_DEMO ? demoSettingsBlock() : sbSettingsBlock()}
     ${connected && !window.SWOLE_DEMO ? `<div class="block">
       <h3>GitHub backup<small>${esc(stateText)}</small></h3>
@@ -575,17 +596,19 @@ async function openSettings(){
     </div>` : ""}
 
     ${window.SWOLE_DEMO ? "" : `    <div class="block">
-      <h3>Morning reminder<small>06:05 every day</small></h3>
+      <h3>Reminders<small>06:05 every day</small></h3>
       <p class="verdict-l" style="text-align:left;max-width:none;margin:6px 0 10px">${
         ps === "on" ? "On. Swole will tell you what today holds and ask you to check in."
         : ps === "denied" ? "Your phone has blocked notifications for this copy of Swole, and it can't ask again. Remove Swole from your Home Screen, add it again from app.joinswole.com in Safari, then tap Turn on reminder here."
         : ps === "unsupported" && !isStandalone() ? "Add Swole to your Home Screen first (Share → Add to Home Screen) and open it from there."
         : "Get a push at 06:05 with today's sessions and a nudge to check in."}</p>
       ${ps === "on" || ps === "denied" ? "" : `<div style="margin-bottom:12px"><button class="btn red" data-act="pushon">Turn on reminder</button></div>`}
+      ${ps === "on" ? `<p class="verdict-l" style="text-align:left;max-width:none;margin:10px 0 6px">Extra reminders. They only come when there's something to do.</p>
+      <div class="remlist">${REMINDERS.map(r => `<label class="remrow"><input type="checkbox" data-rem="${r.id}" ${remOn(r.id) ? "checked" : ""}><span><b>${esc(r.label)}</b><small>${esc(r.when)}</small></span></label>`).join("")}</div>` : ""}
     </div>`}
 
     <div class="block">
-      <h3>App<small>v37 · PWA</small></h3>
+      <h3>App<small>v38 · PWA</small></h3>
       <p class="verdict-l" style="text-align:left;max-width:none;margin:6px 0 12px">${isStandalone() ? "Running from your Home Screen." : "Tip: Share → Add to Home Screen for full-screen and reminders."}<br><small style="opacity:.6">Screen ${(window.__vp||{}).screen} · view ${(window.__vp||{}).inner} · inset ${(window.__vp||{}).envB} · gap ${(window.__vp||{}).gap}</small></p>
     </div>`);
 }
@@ -605,14 +628,16 @@ function openSession(key, id){
     else if (r.level === "g") banner = `<div class="banner g">Green day. Do the full session.</div>`;
     if (r.knee) banner += `<div class="banner y">Knee: drop jumps and pogos. Add 2 extra sets of Spanish squat isometrics instead.</div>`;
   }
-  if (ph && ph.deload && trainable) banner += `<div class="banner y">Deload week: halve the number of sets.</div>`;
-  if (ph && !["test","f1"].includes(ph.key) && trainable && s.kind !== "test") banner += `<div class="banner n">Provisional. Swole updates this session after the retest.</div>`;
+  if (ph && ph.deload && trainable && !s.ai) banner += `<div class="banner y">Deload week: halve the number of sets.</div>`;
+  if (ph && !["test","f1"].includes(ph.key) && trainable && s.kind !== "test" && !s.ai) banner += `<div class="banner n">Provisional. Swole updates this session after the retest.</div>`;
+  if (s.ai && ph && ph.focus && ph.focus[1]) banner += `<div class="banner n"><b>This phase:</b> ${esc(ph.focus[1])}</div>`;
   const cut = ex => r && trainable && ((r.knee && ex[3] === "jump") || (r.level === "r" && s.kind !== "mobility") || (r.level === "y" && ex[3] === "sprint" && false));
   openSheet(`
     <div class="close"><span class="eyebrow">${DAYL[dow(d)]} ${fmt(d)} · ${slotTime({slot:key.endsWith("am") ? "am" : "pm", id})}</span><button data-act="close">Close ✕</button></div>
     <h1 class="sh-title">${esc(s.title)}</h1>
     <div class="sh-meta"><span class="chip red">${esc(s.dur)}</span><span class="chip">${esc(KIND_LABEL[s.kind])}</span>${ph ? `<span class="chip">Week ${w}</span>` : ""}</div>
     ${s.note ? `<p style="margin:0;color:#d9d2cc">${esc(s.note)}</p>` : ""}
+    ${s.why ? `<div class="whybox"><b>Why this session</b><p>${esc(s.why)}</p></div>` : ""}
     ${banner}
     ${s.blocks.map(b => `<div class="block"><h3>${esc(b.name)}<small>${esc(b.t)}</small></h3>
       ${b.ex.map(ex => `<div class="ex ${cut(ex) ? "cut" : ""}"><b>${esc(ex[0])}</b><span class="dose">${esc(ex[1])}</span>${ex[2] ? `<span class="cue">${esc(ex[2])}</span>` : ""}</div>`).join("")}</div>`).join("")}
@@ -759,6 +784,7 @@ document.addEventListener("click", async e => {
   else if (pathClick(t)){ }
   else if (socialClick(t)){ }
   else if (act === "locker"){ homeMode = tab === "dag" && homeMode === "locker" ? "today" : "locker"; tab = "dag"; closeSheetQuiet(); render(); window.scrollTo(0,0); }
+  else if (act === "rebuildplan"){ document.getElementById("sheet").hidden = true; startRebuild(); }
   else if (act === "replayintro"){ document.getElementById("sheet").hidden = true; render(); playMoment("intro"); }
   else if (t.dataset.theme){ setTheme(t.dataset.theme); openSettings(); }
   else if (act === "close"){ CI = null; closeSheet(); }

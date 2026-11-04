@@ -23,10 +23,10 @@ window.SWOLE_DEMO = true;
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Swole Demo">
 <link rel="manifest" href="demo/manifest.webmanifest">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=37">
-<link rel="icon" type="image/png" href="icons/icon-192.png?v=37">
-<link rel="preload" href="fonts/TerzaDisplay-Regular.woff2?v=37" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="fonts/Metrim-Regular.woff2?v=37" as="font" type="font/woff2" crossorigin>
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=38">
+<link rel="icon" type="image/png" href="icons/icon-192.png?v=38">
+<link rel="preload" href="fonts/TerzaDisplay-Regular.woff2?v=38" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/Metrim-Regular.woff2?v=38" as="font" type="font/woff2" crossorigin>
 <style>
 /* Layout: warm graphite soft-UI phone app, red accent. Glass cards, Swole breaking out over the hero card's top edge, pill CTAs with teal glow, floating icon tab bar. Single committed dark look. */
 :root{
@@ -972,8 +972,8 @@ html.ob-open,html.ob-open body{overflow:hidden}
 .obsum{display:flex;flex-wrap:wrap;gap:8px}.obsum span{background:#EDEDED;border-radius:999px;padding:8px 12px;font:600 13px var(--f)}
 
 /* ================= v35 · black & white. Metrim logo, Terza Display for the rest ================= */
-@font-face{font-family:"Metrim";src:url("fonts/Metrim-Regular.woff2?v=37") format("woff2");font-display:block}
-@font-face{font-family:"Terza Display";src:url("fonts/TerzaDisplay-Regular.woff2?v=37") format("woff2");font-display:swap}
+@font-face{font-family:"Metrim";src:url("fonts/Metrim-Regular.woff2?v=38") format("woff2");font-display:block}
+@font-face{font-family:"Terza Display";src:url("fonts/TerzaDisplay-Regular.woff2?v=38") format("woff2");font-display:swap}
 :root{
   --fd:"Terza Display","Iowan Old Style",Georgia,serif;
   --logo:"Metrim","Terza Display",Georgia,serif;
@@ -1058,6 +1058,21 @@ input,textarea,select,button{font-family:var(--fd)}
 .obwel.v35 .obwelbtns{position:fixed;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0px) + 30px);display:flex;flex-direction:column;align-items:center;gap:6px;padding:0 24px}
 .obwel.v35 .pill{width:min(100%,340px);height:52px;font-size:17px}
 .obwel.v35 .oblink{font-size:15px;text-decoration:none}
+/* v38: plan builder steps, why-box, extra reminders */
+.obsteps li.now,.obsteps li.done{opacity:1;animation:none}
+.obsteps li.done{color:#000}.obsteps li.done::before{content:"✓ ";font-weight:600}
+.obsteps li.now{color:#000}.obsteps li.now::after{content:" …";animation:obpulse 1.2s infinite}
+.obsteps li:not(.now):not(.done){opacity:.35;animation:none}
+@keyframes obpulse{50%{opacity:.2}}
+.whybox{margin:12px 0;padding:12px 14px;border-radius:16px;background:#F0F0F0;color:#1A1A1A;font-size:13.5px;line-height:1.45}
+.whybox b{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#575757;margin-bottom:4px}
+.whybox p{margin:0}
+.remlist{display:flex;flex-direction:column;gap:8px;margin:4px 0 12px}
+.remrow{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:14px;background:rgba(127,127,127,.08);cursor:pointer}
+.remrow input{width:20px;height:20px;accent-color:#000;flex:none}
+.remrow span{display:flex;flex-direction:column}.remrow small{opacity:.65;font-size:12px}
+.obph.dl{background:#BDBDBD!important;padding:0;min-width:5px;border-radius:6px}
+.obphases .obph b{white-space:nowrap}
 </style>
 </head>
 <body>
@@ -1071,14 +1086,14 @@ input,textarea,select,button{font-family:var(--fd)}
 </nav></div>
 <div class="sheet" id="sheet" hidden><div class="in" id="sheetIn"></div></div>
 <div class="toast" id="toast" hidden></div>
-<script src="plan.js?v=37"></script>
-<script src="locker.js?v=37"></script>
-<script src="social.js?v=37"></script>
-<script src="demo.js?v=37"></script>
-<script src="gen.js?v=37"></script>
-<script src="sb.js?v=37"></script>
-<script src="path.js?v=37"></script>
-<script src="app.js?v=37"></script>
-<script src="onboarding.js?v=37"></script>
+<script src="plan.js?v=38"></script>
+<script src="locker.js?v=38"></script>
+<script src="social.js?v=38"></script>
+<script src="demo.js?v=38"></script>
+<script src="gen.js?v=38"></script>
+<script src="sb.js?v=38"></script>
+<script src="path.js?v=38"></script>
+<script src="app.js?v=38"></script>
+<script src="onboarding.js?v=38"></script>
 </body>
 </html>

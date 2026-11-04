@@ -3,28 +3,32 @@
    weeks are units, morning sessions are nodes, tests are boss nodes,
    every week ends in a chest. The trainer stands next to where you are. */
 const PROGRAM = {
-  trainer: "lek",
+  trainer: "tomas",
   name: "Fight Engine",
-  by: "Kru Lek",
+  by: "Tomas Reyes",
   gym: "Nak Muay CPH",
   blurb: "26 weeks. Explosive first, then the gas tank.",
 };
 /* a member's own onboarding (demo) can swap in their coach and program name */
 if (window.SWOLE_PROFILE && window.SWOLE_PROFILE.coach){
   const P = window.SWOLE_PROFILE;
-  PROGRAM.trainer = P.coach; PROGRAM.by = (typeof CAST !== "undefined" && CAST[P.coach]) ? CAST[P.coach].name : PROGRAM.by;
+  PROGRAM.trainer = typeof coachId === "function" ? coachId(P.coach) : P.coach; PROGRAM.by = (typeof CAST !== "undefined" && CAST[PROGRAM.trainer]) ? CAST[PROGRAM.trainer].name : PROGRAM.by;
   if (P.program) PROGRAM.name = P.program;
 }
+/* v38 coaches: plain, calm, and they say why. One line per phase type. */
 const COACH_SAYS = {
-  elin: {test:"Day one energy! Let's see what you've got.", build:"You're on fire. One more rep than last week!", deload:"Recovery week, superstar. Rest is training too.", retest:"Retest time. Show me that glow-up!"},
-  dale: {test:"First we measure, then we sweat. Sauna after.", build:"Steady work. I'll have the towel ready.", deload:"Easy week. Sit in the heat and breathe.", retest:"Let's see how far you've come, my friend."},
-  fred: {test:"Baseline first. Then we get sharp.", build:"Good tempo. Keep the feet light.", deload:"Lighter week. Stay loose, stay ready.", retest:"Test day. Play it like a final."},
+  anders: {test:"First we find your numbers. Then every week has a target.", build:"Same lifts, a little more load or one more rep. That's progressive overload.", deload:"Lighter week. Fatigue drops, the strength stays.", retest:"Retest. Same setup as last time, so the numbers compare."},
+  sara:   {test:"Baseline first: heart rate, pace, how fast you recover.", build:"Easy days easy, hard days hard. The middle is where progress stalls.", deload:"Easy week. The adaptations from the last block land now.", retest:"Same test, same conditions. Let's see what moved."},
+  tomas:  {test:"First we see where you are. No ego, just honest numbers.", build:"Technique holds when you're tired only if you train it tired. Rounds, not reps.", deload:"Lighter week. Sharp beats sore on fight night.", retest:"Checkpoint. Same rounds, same rest. Show me what changed."},
+  ingrid: {test:"We measure your range so we know what's actually changing.", build:"Range you can't control doesn't count. Load the end range slowly.", deload:"Gentle week. Keep moving, skip the hard holds.", retest:"Same positions as the first test. Measure, don't force."},
+  kofi:   {test:"A short time trial so your paces fit you, not a chart.", build:"Most of your running easy. That's what lets the fast days be fast.", deload:"Fewer kilometres this week. Legs absorb the work.", retest:"Same course, same warm-up. Run it even."},
+  maja:   {test:"Resting heart rate, a walk test, your watch's VO2 max. That's our starting line.", build:"Zone 2 most days, one hard interval session. That's the evidence-based mix.", deload:"Easy week. Sleep and walks still count.", retest:"Let's see your numbers move. Small changes here add up over years."},
 };
-const LEK_GENERIC = {test:"First we see where you are. No ego, just honest work.", build:"Slow is smooth. Smooth is fast.", deload:"Rest week. You grow when you sleep, not when you sweat.", retest:"Checkpoint. Show me what changed."};
+const LEK_GENERIC = COACH_SAYS.tomas;
 function coachLine(phKey){
   const gen = typeof PLAN_GENERATED !== "undefined" && PLAN_GENERATED;
-  if (PROGRAM.trainer === "lek" && !gen) return LEK_SAYS[phKey] || "";
-  const c = PROGRAM.trainer === "lek" ? LEK_GENERIC : COACH_SAYS[PROGRAM.trainer]; if (!c) return "";
+  if (PROGRAM.trainer === "tomas" && !gen) return LEK_SAYS[phKey] || "";
+  const c = COACH_SAYS[PROGRAM.trainer] || LEK_GENERIC;
   if (gen && phKey === "f1") return c.test;                     // a member's first phase: the "day one" line
   return /^d|jul/.test(phKey) ? c.deload : (phKey === "test" ? c.test : /rt|end/.test(phKey) ? c.retest : c.build);
 }
@@ -32,16 +36,16 @@ const PATH_SKIP = new Set(["mobil"]);          /* optional sessions stay off the
 const PCOLOR = { test:"#000000", f1:"#000000", d1:"#6E6564", f2:"#000000", jul:"#000000", rt1:"#000000", f3:"#000000", d2:"#6E6564", f4:"#000000", d3:"#000000", f5:"#000000", end:"#000000" };
 const LEK_SAYS = {
   test:"First we measure. No ego, just numbers.",
-  f1:"Knees first, then we jump. Slow is smooth.",
-  d1:"Rest week. You grow when you sleep, not when you sweat.",
+  f1:"Landing mechanics and tendons first, then we jump.",
+  d1:"Lighter week. The work from the last block lands now.",
   f2:"Now we get heavy. Then we get fast.",
   jul:"Christmas. Eat, laugh, keep the engine warm.",
   rt1:"Retest. Show me what changed.",
-  f3:"Explosive. Every rep like the last round.",
+  f3:"Power: low reps, full rest, every rep fast. Slow reps don't count here.",
   d2:"Easy week. Hips, ankles, breathe.",
-  f4:"Gas tank. Stay in the red, recover fast.",
+  f4:"Gas tank: hard efforts, short rest. Your recovery between rounds is the target.",
   d3:"Light week, tests on the weekend.",
-  f5:"Peak. Low volume, all speed.",
+  f5:"Peak: less volume, same intensity. You should feel fresh and fast.",
   end:"Final test. Let's see the fighter you built.",
 };
 const PICON = {

@@ -81,9 +81,12 @@ const PLAN_GENERATED = (() => {
   const mins = Math.max(20, Math.min(90, Number(plan.mins) || 45));
   const days = Math.max(1, Math.min(6, Number(plan.days) || 3));
   const FX = Array.isArray(P.fixed) ? P.fixed.filter(f => f && Array.isArray(f.days) && f.days.length) : [];
-  const hardFx = FX.reduce((n, f) => n + (f.hard ? f.days.length : 0), 0);
-  const redCap = Math.max(0, 2 - hardFx);   // hard classes count as Zone Red
+  const said = A.hard == null ? null : (A.hard === "4+" ? 4 : Number(A.hard));   // v38: the member says how many sessions are really hard
+  const hardFx = Math.min(FX.reduce((n, f) => n + (f.hard ? f.days.length : 0), 0), said == null || isNaN(said) ? 99 : said);
+  const redCap = Math.max(0, (["3+ years","I compete"].includes(A.history) ? 3 : 2) - hardFx);   // hard classes count as Zone Red
   const newbie = A.history === "New to training";
+  const lvl = Math.max(0, ["New to training","Under 1 year","1–3 years","3+ years","I compete"].indexOf(A.history));   // pre-v38 answers ("Regularly for 1+ year" etc.) fall back below
+  const trained = lvl >= 2 || /Regularly|Competing/.test(A.history || "");
   const goal = (P.goal.label || "").toLowerCase();
   const inj = (A.injury || []).filter(x => x !== "Nothing").map(x => x.toLowerCase());
 
@@ -133,9 +136,12 @@ const PLAN_GENERATED = (() => {
     health: [
       t => ({title:"Zone 2", kind:"conditioning", sub:"Easy and steady", blocks:[warm("Easy start"), blk("Aerobic Z2", M(.8), [ex("Walk, bike, row or easy jog", M(.8) + " min", "You can talk in full sentences. This builds the base.")])]}),
       t => ({title:"Full-body strength", kind:"strength", sub:"Big movements", blocks:[warm(), blk("Strength", M(.65), [ex("Goblet squat", "3 × 10", kneeNote.trim()), ex("Push-up (incline if needed)", "3 × 8", shNote.trim()), ex("Row", "3 × 10", ""), ex("Hip hinge (kettlebell deadlift)", "3 × 10", backNote.trim())]), cool()]}),
-      t => ({title: t === "base" ? "Pick-ups" : "Intervals · Zone red", kind:"conditioning", sub: t === "base" ? "Short, comfortable bursts" : "4 × 4 min hard", zoneRed: t !== "base",
-        timer: t === "base" ? [{label:"Brisk", reps:6, work:30, rest:90}] : [{label:"Hard", reps:4, work:240, rest:180}],
-        blocks:[warm(), blk(t === "base" ? "Aerobic Z2" : "Zone Red", M(.55), [t === "base" ? ex("Brisk, about 6/10", "6 × 30 sec", "90 sec easy between.") : ex("Hard, about 8/10", "4 × 4 min", "3 min easy between. The classic VO2 max set.")]), cool()]}),
+      t => (t === "base" && !trained)
+        ? ({title:"Zone 2 + strides", kind:"conditioning", sub:"Steady, then 6 short pick-ups", why:"Zone 2 builds the aerobic base. The short pick-ups at the end teach you to move faster without making the session hard.",
+            blocks:[warm(), blk("Aerobic Z2", M(.65), [ex("Walk, bike, row or easy jog", M(.65) + " min", "Steady the whole time. You can talk in full sentences.")]), blk("Strides", 5, [ex("Pick-ups, about 7/10", "6 × 20 sec", "Walk or spin easy for 60 sec between. Relaxed, not a sprint.")]), cool()]})
+        : ({title:"Intervals · Zone red", kind:"conditioning", sub:"4 × 4 min hard", zoneRed:true, why:"Four 4-minute efforts at 90–95 % of max heart rate is one of the best-studied ways to raise VO2 max.",
+            timer:[{label:"Hard", reps:4, work:240, rest:180}],
+            blocks:[warm(), blk("Zone Red", M(.55), [ex("Hard, about 8–9/10", "4 × 4 min", "3 min easy between. Aim for 90–95 % of max heart rate by the end of each rep.")]), cool()]}),
       t => ({title:"Walk + mobility", kind:"mobility", sub:"Recovery", blocks:[blk("Recovery", M(.6), [ex("Brisk walk", M(.6) + " min", "Outside if you can.")]), blk("Mobility", M(.3), [ex("Hip and calf stretches", "60 sec each", "")])]}),
       t => ({title:"Zone 2 · Long", kind:"conditioning", sub:"Longest easy session", blocks:[blk("Aerobic Z2", M(.9), [ex("Walk, bike or easy jog", M(.9) + " min", "Easy all the way.")])]}),
       t => ({title:"Strength B", kind:"strength", sub:"Single-leg and core", blocks:[warm(), blk("Strength", M(.6), [ex("Split squat", "3 × 8 / side", kneeNote.trim()), ex("Single-arm row", "3 × 10 / side", ""), ex("Dead bug", "3 × 8 / side", "")]), cool()]}),
@@ -183,6 +189,51 @@ const PLAN_GENERATED = (() => {
       {id:"rhr", name:"Resting heart rate", how:"From your watch.", fields:[["v","bpm"]]}]},
   };
 
+  /* ---------- v38: a plan written by the plan builder (Supabase function build-plan) ----------
+     plan.ai = {title, summary, phases:[{name, weeks, type, focus, progression, week:[7 session ids|null]}],
+                sessions:{id:{title, kind, sub, durMin, rpe, zoneRed, why, note, blocks:[{name, min, ex:[{name, dose, note, tag}]}], timer}}, tests}
+     It has already passed the safety rules on the server; here it is only turned into the app's structures. */
+  const AI = plan.ai && Array.isArray(plan.ai.phases) && plan.ai.sessions ? plan.ai : null;
+  const finish = (T) => {
+    /* the member's own fixed classes, merged per weekday: plannedFor() shows them as the "pm" slot */
+    window.SWOLE_FIXED = {};
+    for (let d = 0; d < 7; d++){
+      const today = FX.filter(f => f.days.includes(d)); if (!today.length) continue;
+      const when = today.map(f => f.when).filter(Boolean)[0] || "Your time";
+      SESS["fx" + d] = {title: today.map(f => f.label).join(" + "), kind:"class", dur:"Your class", sub: today.some(f => f.hard) ? "Your own session · counts as a hard day" : "Your own session", when,
+        note:"Part of your week. Log it like any session so your plan knows how hard the week was.", blocks:[]};
+      window.SWOLE_FIXED[d] = "fx" + d;   // same Monday-first index as dow()
+    }
+    TEMPLATES.base = TEMPLATES.g0;                                  // the Plan page shows week 1 as the weekly template
+    TESTS.length = 0; T.forEach(t => TESTS.push(t));
+  };
+  if (AI){
+    const KINDS = {strength:"strength", power:"strength", conditioning:"conditioning", endurance:"conditioning", run:"conditioning", mobility:"mobility", recovery:"mobility", test:"test", skill:"conditioning"};
+    const sid = id => "ai_" + String(id).replace(/[^\w-]/g, "");
+    Object.entries(AI.sessions).forEach(([id, x]) => {
+      if (!x || !Array.isArray(x.blocks)) return;
+      SESS[sid(id)] = {title: String(x.title || "Session"), kind: KINDS[x.kind] || "conditioning", sub: x.sub || "", dur: (Number(x.durMin) || mins) + " min",
+        zoneRed: !!x.zoneRed, rpe: x.rpe, why: x.why || "", note: x.note || "", ai: true,
+        timer: Array.isArray(x.timer) && x.timer.length ? x.timer.filter(t => t && t.reps && t.work).map(t => ({label: t.label || "Work", reps: Number(t.reps), work: Number(t.work), rest: Number(t.rest) || 0})) : undefined,
+        blocks: x.blocks.map(b => ({name: String(b.name || ""), t: (Number(b.min) || 0) + " min", ex: (b.ex || []).map(e => Array.isArray(e) ? e : [String(e.name || ""), String(e.dose || ""), String(e.note || ""), e.tag || ""])}))};
+    });
+    PHASES.length = 0;
+    Object.keys(TEMPLATES).forEach(k => { if (k.startsWith("g")) delete TEMPLATES[k]; });
+    let w = 1, di = 0, fi = 0;
+    AI.phases.forEach((ph, pi) => {
+      const type = ph.type, last = pi === AI.phases.length - 1, n = Math.max(1, Number(ph.weeks) || 1);
+      const key = type === "deload" ? `d${++di}` : last && type === "test" ? "end" : `f${++fi}`;
+      const wk = [0,1,2,3,4,5,6].map(d => { const id = (ph.week || [])[d]; return id && SESS[sid(id)] ? sid(id) : null; });
+      TEMPLATES["g" + pi] = wk;
+      PHASES.push({key, w:[w, w + n - 1], name: ph.name, tpl: "g" + pi, deload: type === "deload", focus: [ph.focus, ph.progression].filter(Boolean)});
+      w += n;
+    });
+    PLAN_WEEKS = w - 1;
+    const tests = Array.isArray(AI.tests) && AI.tests.length ? AI.tests.map((t, i) => ({id: t.id || "t" + i, name: t.name, how: t.how || "", fields: [["v", t.unit || "result"]]})) : TESTLIB[cat].tests;
+    finish(tests);
+    return true;
+  }
+
   /* ---------- build ---------- */
   const lib = LIB[cat], T = TESTLIB[cat];
   const dayIdx = FX.length ? swolePlaceDays(days, FX).days : ({1:[2], 2:[0,3], 3:[0,2,4], 4:[0,1,3,5], 5:[0,1,2,4,5], 6:[0,1,2,3,4,5]})[days];
@@ -194,8 +245,8 @@ const PLAN_GENERATED = (() => {
     let red = 0;
     dayIdx.forEach((d, k) => {
       if (type === "test" && k === 0){ week[d] = addSess(`g${pi}_test`, {title:T.title, kind:"test", sub:T.sub, note:"Test week: give it your best, but stop if anything hurts.", blocks:[warm(), blk("Test", M(.6), T.tests.map(t => ex(t.name, "1 attempt", t.how))), cool()]}); return; }
-      let j = k % lib.length, s = lib[j](type === "test" || type === "deload" ? "base" : type);
-      if (s.zoneRed){ if (red >= redCap || type === "test" || newbie && type === "base" && red >= Math.min(1, redCap)){ s = lib[0]("base"); } else red++; }   // max 2 Zone Red a week incl. hard classes (1 for beginners at first)
+      let j = k % lib.length, s = lib[j](type === "test" || type === "deload" ? "base" : (type === "base" && trained) ? "build" : type);
+      if (s.zoneRed){ if (red >= redCap || type === "test" || newbie && type === "base" && red >= Math.min(1, redCap)){ s = lib[0](trained ? "build" : "base"); } else red++; }   // max 2 Zone Red a week incl. hard classes (1 for beginners at first)
       if (type === "deload"){ s = {...s, title: s.title + " · easy week", note:"Deload: about 60 % of the usual work. Same quality, less of it.", durMin: Math.max(15, Math.round(mins * .6 / 5) * 5), timer: undefined}; }
       week[d] = addSess(`g${pi}_${k}`, s);
     });
@@ -213,17 +264,7 @@ const PLAN_GENERATED = (() => {
     w += ph.weeks;
   });
   PLAN_WEEKS = w - 1;
-  /* the member's own fixed classes, merged per weekday: plannedFor() shows them as the "pm" slot */
-  window.SWOLE_FIXED = {};
-  for (let d = 0; d < 7; d++){
-    const today = FX.filter(f => f.days.includes(d)); if (!today.length) continue;
-    const when = today.map(f => f.when).filter(Boolean)[0] || "Your time";
-    SESS["fx" + d] = {title: today.map(f => f.label).join(" + "), kind:"class", dur:"Your class", sub: today.some(f => f.hard) ? "Your own session · counts as a hard day" : "Your own session", when,
-      note:"Part of your week. Log it like any session so your plan knows how hard the week was.", blocks:[]};
-    window.SWOLE_FIXED[d] = "fx" + d;   // same Monday-first index as dow()
-  }
-  TEMPLATES.base = TEMPLATES.g0;                                  // the Plan page shows week 1 as the weekly template
-  TESTS.length = 0; T.tests.forEach(t => TESTS.push(t));
+  finish(T.tests);
   return true;
 })();
 /* demo fast-forward: seed sample training only now, so it follows the generated plan */

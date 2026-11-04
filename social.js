@@ -8,20 +8,26 @@ const CAST = {
   kasper: {name: "Kasper",   handle: "bigkasper",    sport: "Boxing",      role: "friend",  city: "Copenhagen"},
   noor:   {name: "Noor",     handle: "noorruns",     sport: "Kickboxing · Running", role: "friend", city: "Frederiksberg"},
   jonas:  {name: "Jonas",    handle: "jonas.lifts",  sport: "Strength (rookie)", role: "friend", city: "Copenhagen"},
-  lek:    {name: "Kru Lek",  handle: "krulek",       sport: "Muay Thai coach", role: "trainer", city: "Copenhagen"},
-  elin:   {name: "Elin",     handle: "elin.moves",   sport: "Group fitness", role: "trainer", city: "Stockholm"},
-  fred:   {name: "Frederik", handle: "padelfred",    sport: "Padel coach", role: "trainer", city: "Copenhagen"},
-  dale:   {name: "Dale",     handle: "gusmester",    sport: "Sauna aufguss", role: "trainer", city: "Sun Valley"},
+  anders: {name: "Anders Holm",  handle: "anders.holm",  sport: "Strength coach",            role: "trainer", city: "Copenhagen", coach: "strength"},
+  sara:   {name: "Sara Okafor",  handle: "sara.okafor",  sport: "Conditioning coach",        role: "trainer", city: "Copenhagen", coach: "conditioning"},
+  tomas:  {name: "Tomas Reyes",  handle: "tomas.reyes",  sport: "Striking coach",            role: "trainer", city: "Copenhagen", coach: "combat"},
+  ingrid: {name: "Ingrid Lund",  handle: "ingrid.lund",  sport: "Physio · mobility",         role: "trainer", city: "Aarhus",     coach: "mobility"},
+  kofi:   {name: "Kofi Mensah",  handle: "kofi.runs",    sport: "Running coach",             role: "trainer", city: "Copenhagen", coach: "running"},
+  maja:   {name: "Maja Berg",    handle: "maja.berg",    sport: "Exercise physiologist",     role: "trainer", city: "Stockholm",  coach: "health"},
 };
-const castImg = id => `media/cast/${id}.webp`;
+/* v38: the old cartoon coaches (lek, elin, fred, dale) were replaced by six science-based coaches.
+   Profiles saved before v38 still say the old id, so it maps to the closest new coach. */
+const COACH_ALIAS = {lek: "tomas", elin: "sara", fred: "anders", dale: "maja"};
+const coachId = id => COACH_ALIAS[id] || id;
+const castImg = id => `media/cast/${coachId(id)}.webp`;
 const initials = n => n.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
 /* round head crop of a full-body cutout; falls back to initials until the art is in */
 function head(id, size = 40){
-  const c = CAST[id] || {name: "?"};
+  const c = CAST[coachId(id)] || {name: "?"};
   return `<span class="hd" style="--s:${size}px" data-i="${esc(initials(c.name))}"><img src="${castImg(id)}" alt="${esc(c.name)}" loading="lazy" onerror="this.remove()"></span>`;
 }
 function body(id){
-  const c = CAST[id] || {name: "?"};
+  const c = CAST[coachId(id)] || {name: "?"};
   return `<span class="bd" data-i="${esc(initials(c.name))}"><img src="${castImg(id)}" alt="${esc(c.name)}" loading="lazy" onerror="this.remove()"></span>`;
 }
 function myHead(size = 40){
@@ -64,10 +70,10 @@ const GYM = {name: "Nak Muay CPH", area: "Nørrebro, Copenhagen", members: 214};
 function gymClasses(){
   const dow = (new Date().getDay() + 6) % 7;
   const base = [
-    {id: "am-pads",  t: "07:00", title: "Morning pads",        coach: "lek", cap: 16, going: ["noor"]},
-    {id: "tech",     t: "17:00", title: "Technique",           coach: "lek", cap: 24, going: ["jonas", "noor"]},
-    {id: "spar",     t: "18:00", title: "Hard sparring",       coach: "lek", cap: 14, going: ["mia", "kasper", "noor"], extra: 6, hot: true},
-    {id: "sauna",    t: "19:45", title: "Aufguss recovery",    coach: "dale", cap: 10, going: ["kasper"], extra: 3},
+    {id: "am-pads",  t: "07:00", title: "Morning pads",        coach: "tomas", cap: 16, going: ["noor"]},
+    {id: "tech",     t: "17:00", title: "Technique",           coach: "tomas", cap: 24, going: ["jonas", "noor"]},
+    {id: "spar",     t: "18:00", title: "Hard sparring",       coach: "tomas", cap: 14, going: ["mia", "kasper", "noor"], extra: 6, hot: true},
+    {id: "sc",       t: "19:45", title: "Strength for fighters", coach: "anders", cap: 12, going: ["kasper"], extra: 3},
   ];
   if (dow === 5 || dow === 6) return base.filter(c => c.id !== "spar");
   return base;
@@ -81,13 +87,13 @@ const FRIENDS = [
 const TEAM_GOAL = {text: "Nak Muay logs 100 sessions in October", have: 63, need: 100, reward: {name: "Team fight shorts", rarity: "epic", img: "media/items/shorts-fist.webp"}};
 
 const POSTS = [
-  {id: "p1", type: "drop", by: "lek", kind: "Drill", title: "Teep, then step off the line", body: "Three rounds on the bag: teep, angle out left, rear kick. Don't admire the teep. Move.", dur: "0:24", tint: "#111111", respect: 128},
+  {id: "p1", type: "drop", by: "tomas", kind: "Drill", title: "Teep, then step off the line", body: "Three 3-min rounds on the bag: teep, angle out left, rear kick. Work at about 7/10 so the technique holds. Fatigue makes footwork sloppy first, so stop the round when the angle disappears.", dur: "0:24", tint: "#111111", respect: 128},
   {id: "p2", type: "flex", by: "mia", kind: "Streak", title: "23-day streak", body: "Three weeks without a missed morning.", respect: 54},
-  {id: "p3", type: "drop", by: "elin", kind: "Program", title: "Engine 6", body: "6 weeks, 3 × 30 min. Intervals that make your rounds feel shorter. Finish it and unlock Elin's hoodie.", dur: "6 wk", program: {id: "engine6", weeks: 6, perWeek: 3}, signature: {name: "Elin's hoodie", rarity: "epic"}, tint: "#747474", respect: 302},
+  {id: "p3", type: "drop", by: "sara", kind: "Program", title: "Engine 6", body: "6 weeks, 3 sessions a week. Two long zone 2 sessions build the aerobic base that refills you between efforts. One 4 × 4 min interval session at 90–95 % of max heart rate raises VO2 max. Finish it and unlock Sara's hoodie.", dur: "6 wk", program: {id: "engine6", weeks: 6, perWeek: 3}, signature: {name: "Sara's hoodie", rarity: "epic"}, tint: "#747474", respect: 302},
   {id: "p4", type: "flex", by: "kasper", kind: "Unlock", title: "Unlocked Barong gloves", body: "Sixty sessions. They're heavy.", item: "gloves-barong", respect: 87},
-  {id: "p5", type: "drop", by: "dale", kind: "Motivation", title: "Heat is a skill", body: "Two minutes longer than you want. Breathe through the nose. Then cold. That's recovery, not a reward.", tint: "#2E2E2E", respect: 61},
+  {id: "p5", type: "drop", by: "maja", kind: "Explainer", title: "What zone 2 actually is", body: "Steady work you can keep for 30–90 minutes while still talking in full sentences. Roughly 60–70 % of max heart rate. Short bursts at 6/10 are not zone 2. The benefit comes from the time spent there.", tint: "#2E2E2E", respect: 61},
   {id: "p6", type: "flex", by: "noor", kind: "PR", title: "New PR · 10 km in 46:20", body: "Fastest yet. Sub-45 is coming.", respect: 143},
-  {id: "p7", type: "drop", by: "fred", kind: "Program", title: "Zero to court-ready", body: "4 weeks for total beginners: footwork, the bandeja and not running into the glass.", dur: "4 wk", program: {id: "court4", weeks: 4, perWeek: 2}, tint: "#292929", respect: 77},
+  {id: "p7", type: "drop", by: "anders", kind: "Program", title: "Strong in 8", body: "8 weeks, 3 full-body sessions a week. Each lift 2–4 hard sets, stopping 1–3 reps short of failure. Add load when you hit the top of the rep range. Simple progressive overload.", dur: "8 wk", program: {id: "strong8", weeks: 8, perWeek: 3}, tint: "#292929", respect: 77},
   {id: "p8", type: "flex", by: "jonas", kind: "Week done", title: "Week 3 on plan", body: "Still can't do a pull-up. Yet.", respect: 39},
 ];
 const DIRECTORY = [
@@ -98,8 +104,8 @@ const DIRECTORY = [
   {kind: "Gyms", id: "g2", name: "Iron Harbour", sub: "Vesterbro · Strength & conditioning"},
   {kind: "Gyms", id: "g3", name: "Court 9 Padel", sub: "Amager · Padel club"},
   {kind: "Gyms", id: "g4", name: "Løvens Boxing", sub: "Østerbro · Boxing"},
-  {kind: "Programs", id: "engine6", name: "Engine 6", sub: "Elin · 6 weeks · conditioning"},
-  {kind: "Programs", id: "court4", name: "Zero to court-ready", sub: "Frederik · 4 weeks · padel"},
+  {kind: "Programs", id: "engine6", name: "Engine 6", sub: "Sara Okafor · 6 weeks · conditioning"},
+  {kind: "Programs", id: "strong8", name: "Strong in 8", sub: "Anders Holm · 8 weeks · strength"},
   {kind: "Programs", id: "teep", name: "Teep everything", sub: "Kru Lek · 3 weeks · Muay Thai"},
 ];
 
