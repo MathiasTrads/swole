@@ -24,6 +24,10 @@ function parseFixed(text){
     if (/\bweekdays?\b|\bhverdage?\b/.test(t)) days.push(0,1,2,3,4);
     if (/\bweekends?\b|\bweekend\b/.test(t)) days.push(5,6);
     FX_DAYS.forEach((names, i) => { if (names.some(n => new RegExp("[^a-zæøå]" + n + "[^a-zæøå]").test(t))) days.push(i); });
+    // v41: ranges like "Monday to Thursday", "mon-thu", "mandag til torsdag"
+    const dayIdx = w => FX_DAYS.findIndex(names => names.includes(w));
+    const rg = t.match(/([a-zæøå]+)\s*(?:to|til|-|–|through)\s*([a-zæøå]+)/);
+    if (rg){ const a = dayIdx(rg[1]), z = dayIdx(rg[2]); if (a >= 0 && z >= 0) for (let i = a; i !== z; i = (i + 1) % 7) days.push(i); }
   }
   days = [...new Set(days)].sort((a, b) => a - b);
   if (!days.length) return {error:"day"};
@@ -40,7 +44,10 @@ function parseFixed(text){
   // what is left once days, times and filler words are gone = the activity
   const filler = new Set(["i","i'm","im","every","each","on","at","in","the","a","an","and","+","&","do","does","have","has","go","goes","to","attend","attends","take","play","plays","train","training","class","classes","session","sessions","morning","mornings","afternoon","afternoons","evening","evenings","night","nights","lunch","noon","midday","before","after","work","daily","day","days","everyday","weekday","weekdays","weekend","weekends","am","pm","kl","jeg","har","går","til","hver","om","på","og","morgen","aften","eftermiddag","formiddag","frokost","usually","always","normally","also","with","my","from","until","til"]);
   FX_DAYS.flat().forEach(n => filler.add(n));
-  const words = raw.replace(/[.,!?]/g, " ").split(/\s+/).filter(w => w && !filler.has(w.toLowerCase()) && !/^\d{1,2}([:.]\d{2})?(am|pm)?$/i.test(w));
+  ["to","through","-","–"].forEach(w => filler.add(w));
+  const isDay = w => FX_DAYS.some(n => n.includes(w));
+  const words = raw.replace(/[.,!?]/g, " ").split(/\s+/).filter(w => w && !filler.has(w.toLowerCase()) && !/^\d{1,2}([:.]\d{2})?(am|pm)?$/i.test(w)
+    && !(/^[a-zæøå]+[-–][a-zæøå]+$/i.test(w) && w.toLowerCase().split(/[-–]/).every(isDay)));
   let label = words.join(" ").trim() || "Class";
   label = label.charAt(0).toUpperCase() + label.slice(1);
   return {label, days, when, hard: FX_HARD.test(raw), text: raw};
@@ -207,15 +214,26 @@ const PLAN_GENERATED = (() => {
     TEMPLATES.base = TEMPLATES.g0;                                  // the Plan page shows week 1 as the weekly template
     TESTS.length = 0; T.forEach(t => TESTS.push(t));
   };
+  /* v40: plans written before the plain-language rules still say "2 RIR", "HRmax" and so on. Same cleanup as the server. */
+  function prPlain(t){
+    if (typeof t !== "string") return t;
+    return t
+      .replace(/@\s*(\d+)\s*[–-]\s*(\d+)\s*RIR/gi, "stopping with $1–$2 reps left").replace(/@\s*(\d+)\s*RIR/gi, "stopping with $1 reps left")
+      .replace(/(\d+)\s*[–-]\s*(\d+)\s*RIR/gi, "$1–$2 reps left").replace(/(\d+)\s*RIR/gi, "$1 reps left").replace(/\bRIR\b/g, "reps left")
+      .replace(/\bRPE\s*(\d+(?:[–-]\d+)?)/gi, "effort $1/10").replace(/\bRPE\b/g, "effort")
+      .replace(/\bHR\s?max\b/gi, "max heart rate").replace(/\bHR\b/g, "heart rate")
+      .replace(/\bZ2\b/g, "zone 2").replace(/\bAMRAP\b/gi, "as many reps as you can").replace(/\bS&C\b/g, "strength training")
+      .replace(/\bskip (the )?sparring\b/gi, "consider sparring lightly");
+  }
   if (AI){
     const KINDS = {strength:"strength", power:"strength", conditioning:"conditioning", endurance:"conditioning", run:"conditioning", mobility:"mobility", recovery:"mobility", test:"test", skill:"conditioning"};
     const sid = id => "ai_" + String(id).replace(/[^\w-]/g, "");
     Object.entries(AI.sessions).forEach(([id, x]) => {
       if (!x || !Array.isArray(x.blocks)) return;
-      SESS[sid(id)] = {title: String(x.title || "Session"), kind: KINDS[x.kind] || "conditioning", sub: x.sub || "", dur: (Number(x.durMin) || mins) + " min",
-        zoneRed: !!x.zoneRed, rpe: x.rpe, why: x.why || "", note: x.note || "", ai: true,
+      SESS[sid(id)] = {title: prPlain(String(x.title || "Session")), kind: KINDS[x.kind] || "conditioning", sub: prPlain(x.sub || ""), dur: (Number(x.durMin) || mins) + " min",
+        zoneRed: !!x.zoneRed, rpe: x.rpe, why: prPlain(x.why || ""), note: prPlain(x.note || ""), ai: true,
         timer: Array.isArray(x.timer) && x.timer.length ? x.timer.filter(t => t && t.reps && t.work).map(t => ({label: t.label || "Work", reps: Number(t.reps), work: Number(t.work), rest: Number(t.rest) || 0})) : undefined,
-        blocks: x.blocks.map(b => ({name: String(b.name || ""), t: (Number(b.min) || 0) + " min", ex: (b.ex || []).map(e => Array.isArray(e) ? e : [String(e.name || ""), String(e.dose || ""), String(e.note || ""), e.tag || ""])}))};
+        blocks: x.blocks.map(b => ({name: String(b.name || ""), t: (Number(b.min) || 0) + " min", ex: (b.ex || []).map(e => Array.isArray(e) ? e.map(prPlain) : [prPlain(String(e.name || "")), prPlain(String(e.dose || "")), prPlain(String(e.note || "")), e.tag || ""])}))};
     });
     PHASES.length = 0;
     Object.keys(TEMPLATES).forEach(k => { if (k.startsWith("g")) delete TEMPLATES[k]; });
@@ -225,7 +243,7 @@ const PLAN_GENERATED = (() => {
       const key = type === "deload" ? `d${++di}` : last && type === "test" ? "end" : `f${++fi}`;
       const wk = [0,1,2,3,4,5,6].map(d => { const id = (ph.week || [])[d]; return id && SESS[sid(id)] ? sid(id) : null; });
       TEMPLATES["g" + pi] = wk;
-      PHASES.push({key, w:[w, w + n - 1], name: ph.name, tpl: "g" + pi, deload: type === "deload", focus: [ph.focus, ph.progression].filter(Boolean)});
+      PHASES.push({key, w:[w, w + n - 1], name: ph.name, tpl: "g" + pi, deload: type === "deload", focus: [prPlain(ph.focus), prPlain(ph.progression)].filter(Boolean)});
       w += n;
     });
     PLAN_WEEKS = w - 1;

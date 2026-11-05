@@ -23,10 +23,10 @@ window.SWOLE_DEMO = true;
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Swole Demo">
 <link rel="manifest" href="demo/manifest.webmanifest">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=38">
-<link rel="icon" type="image/png" href="icons/icon-192.png?v=38">
-<link rel="preload" href="fonts/TerzaDisplay-Regular.woff2?v=38" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="fonts/Metrim-Regular.woff2?v=38" as="font" type="font/woff2" crossorigin>
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=41">
+<link rel="icon" type="image/png" href="icons/icon-192.png?v=41">
+<link rel="preload" href="fonts/TerzaDisplay-Regular.woff2?v=41" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/Metrim-Regular.woff2?v=41" as="font" type="font/woff2" crossorigin>
 <style>
 /* Layout: warm graphite soft-UI phone app, red accent. Glass cards, Swole breaking out over the hero card's top edge, pill CTAs with teal glow, floating icon tab bar. Single committed dark look. */
 :root{
@@ -972,8 +972,8 @@ html.ob-open,html.ob-open body{overflow:hidden}
 .obsum{display:flex;flex-wrap:wrap;gap:8px}.obsum span{background:#EDEDED;border-radius:999px;padding:8px 12px;font:600 13px var(--f)}
 
 /* ================= v35 · black & white. Metrim logo, Terza Display for the rest ================= */
-@font-face{font-family:"Metrim";src:url("fonts/Metrim-Regular.woff2?v=38") format("woff2");font-display:block}
-@font-face{font-family:"Terza Display";src:url("fonts/TerzaDisplay-Regular.woff2?v=38") format("woff2");font-display:swap}
+@font-face{font-family:"Metrim";src:url("fonts/Metrim-Regular.woff2?v=41") format("woff2");font-display:block}
+@font-face{font-family:"Terza Display";src:url("fonts/TerzaDisplay-Regular.woff2?v=41") format("woff2");font-display:swap}
 :root{
   --fd:"Terza Display","Iowan Old Style",Georgia,serif;
   --logo:"Metrim","Terza Display",Georgia,serif;
@@ -1073,6 +1073,111 @@ input,textarea,select,button{font-family:var(--fd)}
 .remrow span{display:flex;flex-direction:column}.remrow small{opacity:.65;font-size:12px}
 .obph.dl{background:#BDBDBD!important;padding:0;min-width:5px;border-radius:6px}
 .obphases .obph b{white-space:nowrap}
+/* v39: building screen */
+.obbuild.v39{padding-top:10vh;text-align:left;align-items:stretch}
+.obbuild.v39 .obeye,.obbuild.v39 .obh,.obbuild.v39 .obp{text-align:left}
+.obbuild.v39 .obbar{width:100%}
+.obbuild.v39 .obnote{text-align:left}
+.obbuild.v39 .obh{margin:6px 0 8px}
+.obbar{height:8px;border-radius:8px;background:#E6E6E6;overflow:hidden;margin:18px 0 18px}
+.obbar i{display:block;height:100%;background:#000;border-radius:8px;transition:width .8s ease}
+.obsteps.v39{gap:12px;margin-bottom:22px}
+.obsteps.v39 li{opacity:1;animation:none;color:#9A9A9A;padding-left:26px;position:relative;font-size:15px}
+.obsteps.v39 li::before{content:"";position:absolute;left:0;top:3px;width:14px;height:14px;border-radius:50%;border:1.5px solid #C8C8C8}
+.obsteps.v39 li.done{color:#000}
+.obsteps.v39 li.done::before{background:#000;border-color:#000;content:"✓";color:#fff;font-size:10px;line-height:14px;text-align:center}
+.obsteps.v39 li.now{color:#000;font-weight:600}
+.obsteps.v39 li.now::before{border-color:#000;border-width:2px;animation:obpulse 1.2s infinite}
+.obsteps.v39 li.now::after{content:""}
+/* v40: Figma notes */
+.obwel.v40{min-height:100svh;display:block;position:relative;padding:0}
+.obwel.v40 .obwordmark{position:absolute;left:3.5%;width:93%;top:26svh;max-width:none}
+.obwel.v40 .obtag{position:absolute;left:0;right:0;top:64svh;margin:0;font-size:16px}
+.obwel.v40 .obwelbtns{bottom:calc(env(safe-area-inset-bottom,0px) + 28px);gap:2px}
+.obwel.v40 .pill{width:auto;height:34px;padding:0 18px;font-size:15px}
+.h3stack{position:absolute;z-index:3;left:max(14px,env(safe-area-inset-left,0px));width:min(62vw,340px);bottom:calc(var(--sb,0px) + 6px + var(--tabh,64px) + 12px);display:flex;flex-direction:column;gap:8px}
+.h3stack .h3today{position:static;width:auto;bottom:auto;left:auto}
+.pathbtn{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:16px;background:#0A0A0A;color:#fff;text-align:left;box-shadow:0 8px 20px rgba(17,17,17,.18)}
+.pathbtn .pb-l{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:#9A9A9A;flex:none}
+.pathbtn b{font-weight:400;font-size:13.5px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pathbtn .go2{color:#fff}
+.phero.noimg{padding:14px;min-height:0}
+.vhead .emo{display:none}
+.obwel.v40{position:fixed;inset:0;min-height:0;z-index:1}
+.obplan.v40{display:flex;flex-direction:column;gap:10px;min-height:calc(100svh - 90px)}
+.obplan.v40 .obbig.sm{margin:0}
+.obstats.sm>div{padding:8px 12px}.obstats.sm b{font-size:26px}
+.obplan.v40 .obphases{margin:0;height:10px}.obplan.v40 .obph{padding:0;border-radius:5px}
+.obplan.v40 .obphn{margin:-4px 0 0}
+.obweek{padding:10px 14px}.obweek .obday{padding:3px 0;font-size:14px}
+.obwhy{border-radius:16px;background:#F2F2F2;padding:10px 14px;font-size:13.5px;line-height:1.4}
+.obwhy summary{list-style:none;cursor:pointer}.obwhy summary::-webkit-details-marker{display:none}
+.obwhy summary b{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#575757;font-weight:400;margin-bottom:2px}
+.obwhy summary span{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.obwhy summary span::after{content:""}
+.obwhy[open] summary span{display:none}.obwhy p{margin:0}
+.obplan.v40 .pill{margin-top:auto}
+.obcoaches.all .obcoach{padding:8px 12px}.obcoaches.all .obcoach img{height:64px}
+.hubsub{margin:-4px 2px 12px;font-size:13.5px;color:#575757}
+.tabs{padding-left:16px!important;padding-right:16px!important}
+.wk .d{padding:10px 0}
+.test{padding:14px;gap:8px}
+.obcoaches{display:flex;flex-direction:column;gap:8px}.obcoaches .obcoach{width:100%}
+/* v41: session checklist */
+.exprog{position:relative;margin:4px 0 8px;padding:10px 14px;border-radius:14px;background:#F0F0F0;font-size:13.5px;color:#575757;overflow:hidden}
+.exprog b{color:#000;font-weight:600}
+.exprog i{position:absolute;left:0;bottom:0;height:3px;background:#000;transition:width .3s}
+.ex.chk{display:grid;grid-template-columns:30px 1fr auto;gap:2px 10px;align-items:start}
+.ex.chk .exm{display:flex;flex-direction:column;gap:2px;min-width:0}
+.ex.chk .exm .dose{font-size:13px}
+.exbox{width:24px;height:24px;margin-top:1px;border-radius:50%;border:1.5px solid currentColor;opacity:.55;background:none;padding:0;position:relative}
+.exbox[aria-pressed=true]{opacity:1;background:#fff;border-color:#fff}
+.exbox[aria-pressed=true]::after{content:"✓";position:absolute;inset:0;display:grid;place-items:center;color:#000;font-size:14px;font-weight:700}
+.ex.chk.on .exm b{opacity:.55;text-decoration:line-through}
+.exin{width:84px;height:36px;border-radius:10px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:inherit;font:inherit;font-size:14px;padding:0 10px;text-align:right}
+.exin::placeholder{color:rgba(255,255,255,.45);font-size:12px}
+/* v41: path choice, find a coach, groundwork, change something */
+.obpaths{display:flex;flex-direction:column;gap:10px;margin-top:8px}
+.obpathopt{display:grid;grid-template-columns:1fr auto;gap:2px 10px;text-align:left;padding:16px 18px;border-radius:18px;background:#F2F2F2;border:1.5px solid transparent}
+.obpathopt b{font-size:17px;font-weight:400}.obpathopt span{grid-column:1;font-size:13px;color:#686868}
+.obpathopt i{grid-row:1/3;grid-column:2;align-self:center;font-style:normal;font-size:20px}
+.obpathopt.on,.obpathopt:active{border-color:#000;background:#fff}
+.obfound{display:flex;flex-direction:column;gap:8px;margin:10px 0}
+.obfc{display:flex;align-items:center;gap:12px;padding:6px 12px;border-radius:16px;background:#F2F2F2;border:1.5px solid transparent;text-align:left}
+.obfc.on{border-color:#000;background:#fff}
+.obfc img{height:52px;width:40px;object-fit:cover;object-position:top}
+.obfc b{display:block;font-weight:400;font-size:15px}.obfc small{font-size:12px;color:#686868}
+.obsoon{padding:12px 14px}.obsoon b{font-weight:400;font-size:15px}.obsoon p{margin:4px 0 8px;font-size:13px;color:#686868}
+.obgw .obeye{margin:10px 0 6px}
+.obqh.sm{font-size:28px;margin-bottom:4px}
+.obgw .obqp{margin-bottom:2px}
+.obchips.sm .obchip{padding:6px 11px;font-size:13px}
+.obchip.add{border-style:dashed}
+.obweekgw{display:flex;flex-direction:column;border-top:1px solid #E6E6E6}
+.obgwrow{border-bottom:1px solid #E6E6E6}
+.obgwrow .obchips{padding:0 0 10px 46px}
+.obgwday{display:flex;align-items:baseline;gap:10px;width:100%;padding:9px 0;text-align:left;background:none;border:0;font:inherit}
+.obgwday i{font-style:normal;width:36px;color:#686868;font-size:13px;flex:none}
+.obgwday span{font-size:15px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.obgwday span.mut{color:#A3A3A3}
+.obgwday small{font-size:12px;color:#686868;flex:none;max-width:40%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.obgwrow.open .obgwday span{font-weight:600}
+.obpaste{margin-top:10px;font-size:14px}.obpaste summary{cursor:pointer;color:#000;text-decoration:underline}
+.obpaste textarea,.obchange textarea{width:100%;min-height:90px;margin-top:8px;border-radius:14px;border:1px solid #D9D9D9;padding:10px 12px;font:inherit;font-size:14px}
+.obchange{display:flex;flex-direction:column;gap:6px;margin-top:auto}
+.obin.sm{display:inline-flex;gap:6px;align-items:center}.obin.sm .obinput{height:34px;font-size:14px;width:180px}
+.obq.obgw{gap:6px}.obq.obgw .obqh{margin:4px 0 0;text-align:left;font-size:28px}.obq.obgw .obqp{text-align:left;margin:0;max-width:none;font-size:14px}
+.obq.obgw .obchips{gap:6px}.obq.obgw>.obchips .obchip{padding:6px 11px;font-size:13.5px}
+.obq.obgw .obgwday{padding:7px 0}
+.obq.obgw .obqfoot{margin-top:auto;padding-top:8px}
+.obq .obpaths+*{}
+.obq.obfc-wrap .obqh{margin-top:4vh}
+.obwhy summary span{-webkit-line-clamp:2}
+.obplan.v40 .oblink{padding:6px 0 0}
+.obq.obgw .obgwday{padding:6px 0}
+.obgwrow .obchips{padding-bottom:8px}
+.ex.chk .exm .dose{text-align:left;opacity:.85}
+.obcoaches.all{gap:6px}.obcoaches.all .obcoach{padding:6px 12px}.obcoaches.all .obcoach img{height:56px}
 </style>
 </head>
 <body>
@@ -1086,14 +1191,14 @@ input,textarea,select,button{font-family:var(--fd)}
 </nav></div>
 <div class="sheet" id="sheet" hidden><div class="in" id="sheetIn"></div></div>
 <div class="toast" id="toast" hidden></div>
-<script src="plan.js?v=38"></script>
-<script src="locker.js?v=38"></script>
-<script src="social.js?v=38"></script>
-<script src="demo.js?v=38"></script>
-<script src="gen.js?v=38"></script>
-<script src="sb.js?v=38"></script>
-<script src="path.js?v=38"></script>
-<script src="app.js?v=38"></script>
-<script src="onboarding.js?v=38"></script>
+<script src="plan.js?v=41"></script>
+<script src="locker.js?v=41"></script>
+<script src="social.js?v=41"></script>
+<script src="demo.js?v=41"></script>
+<script src="gen.js?v=41"></script>
+<script src="sb.js?v=41"></script>
+<script src="path.js?v=41"></script>
+<script src="app.js?v=41"></script>
+<script src="onboarding.js?v=41"></script>
 </body>
 </html>

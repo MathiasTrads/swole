@@ -1,8 +1,8 @@
 // Sends Swole's reminders. Runs from GitHub Actions (see .github/workflows/remind.yml).
 // v37: phone signups come from Supabase (every member), plus the old swole-data repo while it still exists.
-// v38: four slots. Morning (06:05) always goes out. Lunch, evening and bedtime only go to a member
-//      when there is something to do (no check-in yet, a planned session not logged), and only if the
-//      member hasn't switched that reminder off in Settings (settings/reminders).
+// v38: four slots: morning 06:05, lunch 12:30, evening 17:30, bedtime 21:30.
+// v41: every slot is skipped for a member who has already checked in today (Mathias' rule), and the
+//      three later ones also respect the member's switches in Settings (settings/reminders).
 import fs from "node:fs";
 import vm from "node:vm";
 import webpush from "web-push";
@@ -59,6 +59,7 @@ function todayPlan(profile){
 function laterMessage(slot, t){
   const prefs = t.reminders || {};
   if (prefs[slot] === false) return null;
+  if (t.checkedIn) return null;   // v41: no reminders at all once the member has checked in today
   let items = [];
   try { items = todayPlan(t.profile); } catch (e) { console.log("Plan error:", e.message); }
   const open = items.filter(it => !(t.sessions || {})[TODAY + "_" + it.slot]);
@@ -66,13 +67,9 @@ function laterMessage(slot, t){
   if (slot === "lunch")
     return t.checkedIn ? null : {title: "Check in", body: "You haven't checked in today. It takes 30 seconds, and today's session adjusts to how you feel."};
   if (slot === "evening")
-    return open.length ? {title: "Today's session", body: `${open.map(name).join(" + ")}. Log it when you're done, so the plan knows how your week went.`} : null;
-  if (slot === "bed"){
-    if (open.length) return {title: "Log today", body: `Did you train? Log ${open.map(it => it.title).join(" + ")}, or mark it skipped. Both count.`};
-    if (!t.checkedIn) return {title: "Check in", body: "No check-in today. Do it now and tomorrow's plan starts from the right place."};
-    if (items.length) return {title: "Good day", body: "Everything's logged. Screens down soon. Sleep is where the training turns into fitness."};
-    return null;
-  }
+    return {title: "Check in", body: open.length ? `No check-in yet. Today: ${open.map(name).join(" + ")}. 30 seconds first, so the session fits how you feel.` : "No check-in yet today. It takes 30 seconds."};
+  if (slot === "bed")
+    return {title: "Check in", body: "No check-in today. Do it now and tomorrow's plan starts from the right place."};
   return null;
 }
 function message(profile){
@@ -132,7 +129,7 @@ if (!list.length) { console.log("No push subscriptions yet."); process.exit(0); 
 webpush.setVapidDetails("mailto:hello@joinswole.com", VAPID_PUBLIC, VAPID_PRIVATE);
 let sent = 0;
 for (const t of list) {
-  const m = SLOT === "morning" ? message(t.profile) : laterMessage(SLOT, t);
+  const m = SLOT === "morning" ? (t.checkedIn ? null : message(t.profile)) : laterMessage(SLOT, t);
   if (!m) { console.log(`Nothing to remind ${t.who} about. Skipped.`); continue; }
   try {
     await webpush.sendNotification({endpoint: t.sub.endpoint, keys: t.sub.keys}, JSON.stringify({...m, tag: "swole-" + SLOT, url: "./"}), {TTL: (SLOT === "morning" ? 3 : 1) * 3600, urgency: SLOT === "bed" ? "normal" : "high"});

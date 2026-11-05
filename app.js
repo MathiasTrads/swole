@@ -1,7 +1,7 @@
 /* ============ STORE (local cache + private GitHub repo) ============ */
-const S = {checkins:{}, sessions:{}, tests:{}, settings:{}};
+const S = {checkins:{}, sessions:{}, tests:{}, settings:{}, workouts:{}};   // v41 workouts: the exercise checklist per session
 const COLS = Object.keys(S);
-const VAPID_PUBLIC = "BGdgUrJ3O8IIqYpF-MPujZSXU1B8Ad1bjmk1el6vuz7tjvzqO3x4uRZC3pU_khly4fTlIrqAenMrBLXKLDfYYWE";
+const VAPID_PUBLIC = "BNZIEEq-wTwLkafNNrcoiKUfekt8Pejqj6l8-WEJTjv1rnJTmuHJOZpmw189aH7wZzihmwgAeQBt4r2GrYnzDr0";
 const LS = {
   get(k, d){ try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch(e){ return d; } },
   set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} },
@@ -131,22 +131,41 @@ async function pushState(){
   if (!("serviceWorker" in navigator) || !("PushManager" in window)) return "unsupported";
   try { const reg = await navigator.serviceWorker.ready; const sub = await reg.pushManager.getSubscription(); return sub ? "on" : (Notification.permission === "denied" ? "denied" : "off"); } catch(e){ return "off"; }
 }
-async function enablePush(){
+async function enablePush(okText){
   if (window.SWOLE_DEMO){ toast("Reminders are off in the demo."); return false; }
   if (!isStandalone() && /iPhone|iPad/.test(navigator.userAgent)){ toast("First add Swole to your Home Screen, then open it from there."); return false; }
   if (!("serviceWorker" in navigator) || !("PushManager" in window)){ toast("This browser can't receive reminders."); return false; }
   const perm = await Notification.requestPermission();
   if (perm !== "granted"){ toast("Notifications are off. Turn them on in iOS Settings → Swole."); return false; }
   const reg = await navigator.serviceWorker.ready;
-  let sub = await reg.pushManager.getSubscription();
+  await pushSubscribe(reg);
+  toast(okText || "Reminder on. See you at 06:05.");
+  return true;
+}
+/* v41: subscribe with the current key. A phone signed up with an older key is re-signed silently. */
+function subKeyIs(sub){
+  try { const k = sub.options && sub.options.applicationServerKey; if (!k) return true;
+    const a = new Uint8Array(k), b = urlB64ToUint8Array(VAPID_PUBLIC); return a.length === b.length && a.every((x, i) => x === b[i]); } catch(e){ return true; }
+}
+async function pushSubscribe(reg){
+  let sub = await reg.pushManager.getSubscription(), fresh = false;
+  if (sub && !subKeyIs(sub)){ await sub.unsubscribe().catch(() => {}); sub = null; fresh = true; }
   if (!sub) sub = await reg.pushManager.subscribe({userVisibleOnly: true, applicationServerKey: urlB64ToUint8Array(VAPID_PUBLIC)});
   const json = sub.toJSON();
   const key = json.endpoint.slice(-24).replace(/[^A-Za-z0-9]/g, "");
   const push = {...(S.settings.push || {subs: {}})};
-  push.subs = {...(push.subs || {}), [key]: {...json, device: navigator.userAgent.slice(0, 80), at: new Date().toISOString()}};
+  push.subs = {...(fresh ? {} : (push.subs || {})), [key]: {...json, device: navigator.userAgent.slice(0, 80), at: new Date().toISOString()}};
+  push.vapid = VAPID_PUBLIC.slice(0, 12);
   await save("settings", "push", push);
-  toast("Reminder on. See you at 06:05.");
-  return true;
+  if (typeof sbFlush === "function") sbFlush().catch(() => {});   // the server reads it from Supabase
+  return sub;
+}
+async function pushRekey(){
+  try {
+    if (window.SWOLE_DEMO || !("serviceWorker" in navigator) || !("PushManager" in window) || Notification.permission !== "granted") return;
+    const reg = await navigator.serviceWorker.ready; const sub = await reg.pushManager.getSubscription();
+    if ((sub && !subKeyIs(sub)) || (S.settings.push && S.settings.push.vapid !== VAPID_PUBLIC.slice(0, 12) && sub)) await pushSubscribe(reg);
+  } catch(e){}
 }
 
 /* ============ SWOLE (drawn fallback) ============ */
@@ -210,9 +229,9 @@ const BUILTIN_SLOT = {
 };
 /* v11 character pack */
 const MOMENT = {
-  intro:{src:"media/m-intro.webp", ms:5100, word:"THIS IS YOU", sub:`Your Swole: you, on your path for the next ${PLAN_WEEKS} weeks. Check in every morning and show up. It shows.`},
+  intro:{src:"media/m-intro.webp", ms:5100, word:"SWOLE", sub:"Meet your Swole. Check in every day to earn rewards for your Swole."},
   kick:{src:"media/m-kick.webp", ms:5100, word:"LET'S GO", sub:""},
-  flex:{src:"media/m-flex.webp", ms:5100, word:"DONE", sub:"Logged. That's how you get swole."},
+  flex:{src:"media/m-flex.webp", ms:5100, word:"DONE", sub:"Logged. One more step on your path."},
   pose:{src:"media/m-pose.webp", ms:5100, word:"SWOLE", sub:""},
   shadow:{src:"media/m-shadow.webp", ms:6100, word:"FINISHED", sub:"Intervals done. Log your max HR."},
 };
@@ -222,7 +241,7 @@ const POSE = n => FIGHTER ? RF(POSE_MOOD[n] || "default") : `media/pose/${n}.web
 if (FIGHTER){ // moments are the original Swole's animations: show the picked Swole's still pose instead
   const MM = {intro:"default", kick:"ready", flex:"default", pose:"ready", shadow:"ready"};
   for (const k in MOMENT) MOMENT[k].src = RF(MM[k] || "default");
-  MOMENT.intro.word = "THIS IS YOU"; MOMENT.intro.sub = `Your Swole: you, on your path for the next ${PLAN_WEEKS} weeks. Check in every morning and show up. It shows.`;
+  MOMENT.intro.word = "SWOLE"; MOMENT.intro.sub = "Meet your Swole. Check in every day to earn rewards for your Swole.";
 }
 function artFor(slot){
   if (FIGHTER) return BUILTIN_SLOT[slot] || BUILTIN;
@@ -330,19 +349,22 @@ function viewHome(){
   const stars = r ? Math.max(1, Math.min(5, Math.round(r.score/8*5))) : 0;
   const tm = addDays(d,1), tItems = plannedFor(tm);
   const status = r ? LEVEL[r.level].word : "Not checked in";
-  const wk = ph ? `Week ${w} · ${ph.name}` : w < 1 ? `Starts Oct 19 · ${daysBetween(d,START)} days` : "Plan complete";
+  const wk = ph ? `Week ${w} · ${ph.name}` : w < 1 ? `Starts ${fmt(START)}` : "Plan complete";
   const nu = newUnlocks().length;
   return `
   <section class="home3">
     <svg class="bigword" viewBox="0 0 1000 310" aria-hidden="true"><text x="500" y="226" text-anchor="middle" textLength="990" lengthAdjust="spacingAndGlyphs">SWOLE</text></svg>
     <div class="h3fig">${outfitLook() ? `<img src="${outfitLook()}" alt="Swole">` : art ? mediaTag(art) : swoleSVG(mood)}</div>
     ${topBar(false, nu)}
+    <div class="h3stack">
+    <button class="pathbtn" data-hub="path"><span class="pb-l">Your path</span><b>${esc(wk)}</b><span class="go2">›</span></button>
     <div class="card2 h3today">
-      <div class="today2-h"><button class="hubopen" data-hub="path"><h2>Today</h2><i>Path ›</i></button><span>Tomorrow · ${tItems.length ? tItems.map(it => esc(SESS[it.id].title.split(" · ")[0])).join(" + ") : "Rest"}</span></div>
+      <div class="today2-h"><h2>Today</h2><span>Tomorrow · ${tItems.length ? tItems.map(it => esc(SESS[it.id].title.split(" · ")[0])).join(" + ") : "Rest"}</span></div>
       ${items.length ? items.map(it => { const s2 = SESS[it.id], k = key+"_"+it.slot;
         return `<button class="r2 kind-${s2.kind}" data-open="${k}|${it.id}"><span class="t2">${esc(slotTime(it))}</span><span class="n2">${esc(s2.title)}<small>${esc(s2.dur)} · ${esc(s2.sub)}</small></span>${statusChip(k) || `<span class="go2">›</span>`}</button>`; }).join("")
         : `<div class="r2"><span class="t2">All day</span><span class="n2">Rest day<small>Walk, eat, sleep 8 hours</small></span><span></span></div>`}
       <button class="pill wide" data-act="checkin">${ci ? "Redo check-in" : "Start check-in"}</button>
+    </div>
     </div>
   </section>`;
 }
@@ -527,7 +549,7 @@ function viewPlan(){
 function viewTests(){
   return `
   <div class="top"><div class="brand">Tests<b>.</b></div><span class="eyebrow">${PLAN_GENERATED ? `Checkpoint · week ${PLAN_WEEKS}` : "Weeks 1 · 12 · 22 · 26"}</span></div>
-  <div class="phero"><p>Enter your numbers after each test. Swole uses them to build the next phases.</p><img src="${POSE("teep")}" alt=""></div>
+  <p class="hubsub">Enter your numbers after each test. Your coach uses them to plan the next phases.</p>
   <div class="list">${TESTS.map(t => {
     const cur = S.tests[t.id], last = cur && cur.history && cur.history.length ? cur.history[cur.history.length-1] : null;
     const extra = last && t.calc ? t.calc(last.v) : "";
@@ -556,8 +578,8 @@ function closeSheet(){ stopTimer(); document.getElementById("sheet").hidden = tr
    Choices live in settings.reminders so the sender can read them. Default: all on. */
 const REMINDERS = [
   {id:"lunch",   label:"Lunch",   when:"12:30 · only if you haven't checked in"},
-  {id:"evening", label:"Evening", when:"17:30 · only on days with a planned session you haven't logged"},
-  {id:"bed",     label:"Bedtime", when:"21:30 · log today, or a nudge to wind down"},
+  {id:"evening", label:"Evening", when:"17:30 · only if you haven't checked in"},
+  {id:"bed",     label:"Bedtime", when:"21:30 · only if you haven't checked in"},
 ];
 const remPrefs = () => (S.settings && S.settings.reminders) || {};
 const remOn = id => remPrefs()[id] !== false;
@@ -575,12 +597,8 @@ async function openSettings(){
   const stateText = {local: "Saved on this phone only", syncing: "Syncing…", synced: "Synced", error: "Couldn't sync. Will retry."}[GH.state];
   openSheet(`
     <div class="close"><span class="eyebrow">Settings</span><button data-act="close">Close ✕</button></div>
-    <div class="phero set"><h1 class="sh-title">Swole setup</h1><img src="${POSE("bench")}" alt=""></div>
 
-    <div class="block">
-      <h3>Look<small>Black &amp; white</small></h3>
-      <div class="opts" style="margin:8px 0 12px"><button class="opt" data-act="replayintro">Replay intro</button></div>
-    </div>
+
 
     ${window.SWOLE_PROFILE || window.SWOLE_DEMO ? `<div class="block">
       <h3>Your plan<small>${esc((window.SWOLE_PROFILE && window.SWOLE_PROFILE.program) || "")}</small></h3>
@@ -598,7 +616,7 @@ async function openSettings(){
     ${window.SWOLE_DEMO ? "" : `    <div class="block">
       <h3>Reminders<small>06:05 every day</small></h3>
       <p class="verdict-l" style="text-align:left;max-width:none;margin:6px 0 10px">${
-        ps === "on" ? "On. Swole will tell you what today holds and ask you to check in."
+        ps === "on" ? "On. You only get a reminder on days you haven't checked in yet."
         : ps === "denied" ? "Your phone has blocked notifications for this copy of Swole, and it can't ask again. Remove Swole from your Home Screen, add it again from app.joinswole.com in Safari, then tap Turn on reminder here."
         : ps === "unsupported" && !isStandalone() ? "Add Swole to your Home Screen first (Share → Add to Home Screen) and open it from there."
         : "Get a push at 06:05 with today's sessions and a nudge to check in."}</p>
@@ -608,7 +626,7 @@ async function openSettings(){
     </div>`}
 
     <div class="block">
-      <h3>App<small>v38 · PWA</small></h3>
+      <h3>App<small>v41 · PWA</small></h3>
       <p class="verdict-l" style="text-align:left;max-width:none;margin:6px 0 12px">${isStandalone() ? "Running from your Home Screen." : "Tip: Share → Add to Home Screen for full-screen and reminders."}<br><small style="opacity:.6">Screen ${(window.__vp||{}).screen} · view ${(window.__vp||{}).inner} · inset ${(window.__vp||{}).envB} · gap ${(window.__vp||{}).gap}</small></p>
     </div>`);
 }
@@ -630,7 +648,7 @@ function openSession(key, id){
   }
   if (ph && ph.deload && trainable && !s.ai) banner += `<div class="banner y">Deload week: halve the number of sets.</div>`;
   if (ph && !["test","f1"].includes(ph.key) && trainable && s.kind !== "test" && !s.ai) banner += `<div class="banner n">Provisional. Swole updates this session after the retest.</div>`;
-  if (s.ai && ph && ph.focus && ph.focus[1]) banner += `<div class="banner n"><b>This phase:</b> ${esc(ph.focus[1])}</div>`;
+
   const cut = ex => r && trainable && ((r.knee && ex[3] === "jump") || (r.level === "r" && s.kind !== "mobility") || (r.level === "y" && ex[3] === "sprint" && false));
   openSheet(`
     <div class="close"><span class="eyebrow">${DAYL[dow(d)]} ${fmt(d)} · ${slotTime({slot:key.endsWith("am") ? "am" : "pm", id})}</span><button data-act="close">Close ✕</button></div>
@@ -639,19 +657,75 @@ function openSession(key, id){
     ${s.note ? `<p style="margin:0;color:#d9d2cc">${esc(s.note)}</p>` : ""}
     ${s.why ? `<div class="whybox"><b>Why this session</b><p>${esc(s.why)}</p></div>` : ""}
     ${banner}
-    ${s.blocks.map(b => `<div class="block"><h3>${esc(b.name)}<small>${esc(b.t)}</small></h3>
-      ${b.ex.map(ex => `<div class="ex ${cut(ex) ? "cut" : ""}"><b>${esc(ex[0])}</b><span class="dose">${esc(ex[1])}</span>${ex[2] ? `<span class="cue">${esc(ex[2])}</span>` : ""}</div>`).join("")}</div>`).join("")}
+    ${trainable ? exProgress(key, s) : ""}
+    ${s.blocks.map((b, bi) => `<div class="block"><h3>${esc(b.name)}<small>${esc(b.t)}</small></h3>
+      ${b.ex.map((ex, ei) => trainable ? exRow(key, s, b, bi, ex, ei, cut(ex)) : `<div class="ex ${cut(ex) ? "cut" : ""}"><b>${esc(ex[0])}</b><span class="dose">${esc(ex[1])}</span>${ex[2] ? `<span class="cue">${esc(ex[2])}</span>` : ""}</div>`).join("")}</div>`).join("")}
     ${s.timer ? `<div class="timer" id="timer"><div class="lab" id="tLab">Interval timer</div><div class="big mono" id="tBig" style="font-size:56px">${s.timer.filter(x=>x.work).map(x=>x.reps+"×"+x.work+"s").join(" + ")}</div>
       <div class="row"><button class="btn red" data-act="tstart" data-sid="${id}">Start</button><button class="btn ghost" data-act="tstop">Reset</button></div></div>` : ""}
     <div class="logbox">
       <div class="eyebrow">Log this session</div>
-      <div class="opts" id="logStatus">${[["done","Done"],["part","Partly"],["skip","Skipped"]].map(o => `<button class="opt" data-status="${o[0]}" aria-pressed="${log.status === o[0]}">${o[1]}</button>`).join("")}</div>
-      <div><div class="eyebrow" style="margin-bottom:6px">How hard? (RPE 1–10)</div>
+      <div class="opts" id="logStatus">${[["done","Done"],["part","Partly"],["skip","Skipped"]].map(o => `<button class="opt" data-status="${o[0]}" aria-pressed="${(log.status || exAutoStatus(key, s)) === o[0]}">${o[1]}</button>`).join("")}</div>
+      <div><div class="eyebrow" style="margin-bottom:6px">How hard?</div>
       <div class="rpe" id="logRpe">${[1,2,3,4,5,6,7,8,9,10].map(n => `<button data-rpe="${n}" aria-pressed="${log.rpe === n}">${n}</button>`).join("")}</div></div>
-      <textarea id="logNote" placeholder="Note for Swole (optional)">${esc(log.note || "")}</textarea>
-      <button class="btn red" data-act="logsave" data-key="${key}" data-id="${id}">Save log</button>
+      <textarea id="logNote" placeholder="Notes for your coach (optional)">${esc(log.note || "")}</textarea>
+      <button class="btn red" data-act="logsave" data-key="${key}" data-id="${id}">Save</button>
     </div>`);
 }
+
+/* v41: the session as a checklist. Tick exercises off as you go and note the weight (or pace, watts…).
+   Stored in S.workouts[key] = {ex: {"block.exercise": {d: true, v: "60"}}, at}, separate from the session log,
+   so a half-ticked session still counts as "not logged" for the check-in and the reminders. */
+const exKey = (bi, ei) => bi + "." + ei;
+const exState = key => (S.workouts[key] && S.workouts[key].ex) || {};
+const exList = s => s.blocks.flatMap((b, bi) => b.ex.map((ex, ei) => ({b, bi, ex, ei})));
+function exField(s, b, ex){
+  if (s.kind === "mobility" || /warm|cool|mobil|recover|breath|flow/i.test(b.name)) return null;
+  if (/strength|power|skill|lift/i.test(b.name) || s.kind === "strength" || /\d\s*[×x]\s*\d/.test(ex[1]) && !/min|sec|\bs\b/.test(ex[1])) return {ph: "kg", mode: "decimal"};
+  return {ph: "Pace, watts…", mode: "text"};
+}
+/* the last number this member wrote for the same exercise, from any earlier session */
+function exLast(key, name){
+  let best = null;
+  for (const [k, w] of Object.entries(S.workouts)){
+    if (k >= key || !w || !w.names) continue;
+    for (const [ek, nm] of Object.entries(w.names)){ const v = (w.ex[ek] || {}).v; if (nm === name && v && (!best || k > best.k)) best = {k, v}; }
+  }
+  return best ? best.v : "";
+}
+function exRow(key, s, b, bi, ex, ei, cut){
+  const k = exKey(bi, ei), st = exState(key)[k] || {}, f = exField(s, b, ex), last = f ? exLast(key, ex[0]) : "";
+  return `<div class="ex chk ${st.d ? "on" : ""} ${cut ? "cut" : ""}">
+    <button class="exbox" data-exdone="${key}|${k}" aria-pressed="${!!st.d}" aria-label="Done: ${esc(ex[0])}"></button>
+    <div class="exm"><b>${esc(ex[0])}</b><span class="dose">${esc(ex[1])}</span>${ex[2] ? `<span class="cue">${esc(ex[2])}</span>` : ""}</div>
+    ${f ? `<input class="exin" data-exin="${key}|${k}" inputmode="${f.mode}" placeholder="${esc(last ? "Last: " + last : f.ph)}" value="${esc(st.v || "")}" aria-label="${esc(f.ph)} for ${esc(ex[0])}">` : ""}
+  </div>`;
+}
+function exCount(key, s){ const st = exState(key), all = exList(s); return {done: all.filter(x => (st[exKey(x.bi, x.ei)] || {}).d).length, all: all.length}; }
+function exProgress(key, s){ const c = exCount(key, s); return `<div class="exprog" id="exProg"><b>${c.done} of ${c.all}</b> exercises done<i style="width:${c.all ? Math.round(c.done / c.all * 100) : 0}%"></i></div>`; }
+function exAutoStatus(key, s){ const c = exCount(key, s); return c.all && c.done === c.all ? "done" : c.done ? "part" : ""; }
+async function exSave(key, k, patch){
+  const [date, slot] = key.split("_"), w = S.workouts[key] || {ex: {}, names: {}};
+  const sid = (plannedFor(parse(date)).find(it => it.slot === slot) || {}).id, s = SESS[sid];
+  const ex = {...w.ex, [k]: {...(w.ex[k] || {}), ...patch}}, names = {...(w.names || {})};
+  if (s){ const [bi, ei] = k.split(".").map(Number); const e = (s.blocks[bi] || {ex: []}).ex[ei]; if (e) names[k] = e[0]; }
+  await save("workouts", key, {ex, names, session: sid, at: new Date().toISOString()});
+  if (s){ const p = document.getElementById("exProg"); if (p) p.outerHTML = exProgress(key, s);
+    const auto = exAutoStatus(key, s), cur = document.querySelector("#logStatus [aria-pressed=true]");
+    if (auto && (!cur || cur.dataset.status !== "skip")) document.querySelectorAll("#logStatus .opt").forEach(b => b.setAttribute("aria-pressed", b.dataset.status === auto)); }
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-exdone]"); if (!b) return;
+  const [key, k] = b.dataset.exdone.split("|"), on = b.getAttribute("aria-pressed") !== "true";
+  b.setAttribute("aria-pressed", on); b.closest(".ex").classList.toggle("on", on);
+  exSave(key, k, {d: on});
+});
+document.addEventListener("change", e => {
+  const i = e.target.closest("[data-exin]"); if (!i) return;
+  const [key, k] = i.dataset.exin.split("|"), v = i.value.trim();
+  const row = i.closest(".ex"), box = row.querySelector(".exbox");
+  const patch = {v}; if (v && box.getAttribute("aria-pressed") !== "true"){ patch.d = true; box.setAttribute("aria-pressed", "true"); row.classList.add("on"); }   // writing a weight means you did it
+  exSave(key, k, patch);
+});
 
 /* timer */
 let actx = null;
@@ -695,15 +769,27 @@ function startCheckin(){
   const prev = S.checkins[today] || {};
   const ySess = plannedFor(y).filter(it => !(S.sessions[iso(y)+"_"+it.slot]));
   CI = {step:0, a:{...prev, sessions:{}}, ySess, yDate:iso(y)};
-  CI.steps = (ySess.length ? ["sessions"] : []).concat(["sleep","energy","sore","knee","stress","meals","protein","carbs","final"]);
+  CI.steps = (ySess.length ? ["sessions"] : []).concat(["sleep","energy","sore", ...(injuryWord() ? ["knee"] : []), "stress","meals","protein","carbs","final"]);
   renderCI();
   document.getElementById("sheet").hidden = false;
 }
+/* v40: the "pain" question only asks about what the member reported at sign-up (Mathias' own account: the knee).
+   The answer is still stored as "knee" so readiness and old data keep working. */
+function injuryWord(){
+  const P = window.SWOLE_PROFILE; if (!P) return "the knee";
+  const inj = ((P.answers || {}).injury || []).filter(x => x && x !== "Nothing");
+  if (!inj.length) return "";
+  const named = inj.filter(x => x !== "Something else").map(x => x.toLowerCase());
+  if (!named.length) return "the sore spot";
+  return "your " + (named.length > 1 ? named.slice(0, -1).join(", ") + " and " + named.at(-1) : named[0]);
+}
+const KNEE_OPTS = [[0,"Nothing"],[1,"I can feel it"],[2,"It bothers me"],[3,"It hurts"]];
 const Q = {
   sleep:{q:"How much did you sleep last night?", opts:[["<6","Under 6 hours"],["6-7","6–7 hours"],["7-8","7–8 hours"],["8+","8 hours or more"]]},
   energy:{q:"How's your energy?", scale:["Flat","Sharp"]},
   sore:{q:"How sore or stiff are you?", scale:["Fresh","Wrecked"]},
-  knee:{q:"How's the knee?", opts:[[0,"Nothing"],[1,"I can feel it"],[2,"It bothers me"],[3,"It hurts"]]},
+  get knee(){ return {q:`How's ${injuryWord() || "your body"}?`, opts:KNEE_OPTS}; },
+  _knee:{opts:[[0,"Nothing"],[1,"I can feel it"],[2,"It bothers me"],[3,"It hurts"]]},
   stress:{q:"Stress level?", opts:[["lav","Low"],["moderat","Moderate"],["hoj","High"]]},
   meals:{q:"How many proper meals did you eat yesterday?", sub:"A meal is a plate of food or a solid shake. Snacks don't count.", opts:[["1-2","1–2"],["3","3"],["4","4"],["5+","5 or more"]]},
   protein:{q:"Was there protein in every meal?", sub:"At least a palm: meat, fish, eggs, skyr or cottage cheese.", opts:[["alle","Yes, all of them"],["fleste","Most of them"],["faa","Only a few"]]},
@@ -723,7 +809,7 @@ function renderCI(){
     const isMon = dow(new Date()) === 0;
     body = `<h2 class="ci-q">Anything I should know?</h2><p class="ci-sub">Optional. Keep it short.</p>
     <div class="field" style="margin-bottom:12px"><label for="ciWeight">Morning weight (kg)${isMon ? " · it's Monday, weigh in" : " · optional"}</label><input type="number" inputmode="decimal" step="0.1" id="ciWeight" value="${CI.a.weight ?? ""}"></div>
-    <textarea id="ciNote" placeholder="E.g. bad night, sore shins after sparring">${esc(CI.a.note || "")}</textarea>
+    <textarea id="ciNote" placeholder="E.g. bad night, sore legs after running">${esc(CI.a.note || "")}</textarea>
     <div class="ci-nav"><button class="btn ghost" data-act="ciback">← Back</button><button class="btn red" data-act="cisave">Get today's verdict</button></div>`;
   } else {
     const q = Q[st];
@@ -756,9 +842,9 @@ async function saveCI(){
     <div class="close"><span class="eyebrow">Today's verdict</span><button data-act="close">Close ✕</button></div>
     <section class="verdict3">
       <div class="vfig"><svg class="vword" viewBox="0 0 1000 300" aria-hidden="true"><text x="500" y="270" text-anchor="middle" textLength="${Math.min(1000, L.word.length*150)}" lengthAdjust="spacingAndGlyphs">${esc(L.word.toUpperCase())}</text></svg>${mediaTag(art)}</div>
-      <div class="vcard"><div class="vhead"><img class="emo lg" src="${EMO(emo)}" alt=""><div><b style="color:${L.color}">${esc(L.word)}</b><span>Readiness ${Math.round(r.score*10)/10} / 8</span></div></div>
+      <div class="vcard"><div class="vhead"><div><b style="color:${L.color}">${esc(L.word)}</b><span>Readiness ${Math.round(r.score*10)/10} / 8</span></div></div>
       <p>${esc(L.line)}</p>${r.knee ? `<p>Something hurts? Go easy and skip what makes it worse.</p>` : ""}<p>${esc(foodLine(r.food))}</p>
-      <button class="pill wide" data-act="close">To today's sessions</button></div>
+      <button class="pill wide" data-act="close">Today's sessions</button></div>
     </section>`;
   if (r.level !== "r") playMoment("kick", {word: r.level === "g" ? "LET'S GO" : "EASY NOW", sub: L.line});
   CI = null;
@@ -887,6 +973,7 @@ loadAll().then(() => {
   const p = S.settings && S.settings.profile;
   if (!window.SWOLE_DEMO && !window.SWOLE_PROFILE && p && p.onboarded && !sessionStorage.getItem("swole:profReload")){ sessionStorage.setItem("swole:profReload", "1"); location.reload(); return; }
   render();
+  setTimeout(pushRekey, 3000);
 });
 
 /* v35: Terza Display is wider than the old condensed face. Size poster words to their slot instead of squashing the letters. */
