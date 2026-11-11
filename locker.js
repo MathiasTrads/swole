@@ -1,78 +1,155 @@
-/* Swole · Locker: items, rarities and how you unlock them.
-   Add a new item: drop a square transparent thumbnail in media/items/<id>.webp and add a row below.
-   unlock: {type: "start" | "checkins" | "streak" | "sessions" | "tests" | "week", n}
-   look (optional): media file for a Swole render wearing this item. */
+/* Swole · Locker v2 (v43): 80 invented items in four categories, all earned through training.
+   Catalogue doc: "Swole Locker catalogue v1". Icons: media/locker/items/<id>.webp (flat-lay, transparent).
+   Every item fits every Swole (shared proportions). Signature looks: two pre-drawn looks per v2 Swole,
+   shown on your Swole when you own and wear every piece of the look.
+   unlock: {type, n}
+     start     starter kit
+     checkins  days with a check-in
+     streak    best run of check-in days in a row
+     sessions  sessions logged as done
+     week      reach Path week n (week n-1 finished = "weekly chest")
+     phases    Path phases finished ("checkpoints")
+     retests   tests logged at least twice (beat-your-own-result rewards)
+     done      the whole Path finished */
 const RARITY = {
-  common:    {label: "Common",    c: "#BDBDBD"},
-  rare:      {label: "Rare",      c: "#8A8A8A"},
-  epic:      {label: "Epic",      c: "#4A4A4A"},
-  legendary: {label: "Legendary", c: "#000000"},
+  common:    {label: "Common",          c: "#BDBDBD"},
+  rare:      {label: "Rare",            c: "#8A8A8A"},
+  epic:      {label: "Epic",            c: "#4A4A4A"},
+  legendary: {label: "Legendary",       c: "#000000"},
+  valor:     {label: "No Stolen Valor", c: "#B8912E"},
 };
-const SLOTS = {
-  top: "Top", shorts: "Shorts", wraps: "Hand wraps", gloves: "Gloves", shins: "Shin guards",
-  head: "Headgear", mouth: "Mouthguard", outfit: "Outfit",
+const SLOTS = {top: "Top", bottom: "Bottom", outer: "Outer layer", shoes: "Shoes", head: "Head", hands: "Hands", acc: "Accessory", set: "Set"};
+const SLOT_FIXED = ["top", "bottom", "shoes"];          // always wearing something here
+const CATS = [["looks", "Looks"], ["sportswear", "Sportswear"], ["casual", "Casual"], ["footwear", "Footwear"], ["gear", "Gear"]];
+const U = {
+  start: {type: "start"},
+  day: n => ({type: "checkins", n}),
+  chest: n => ({type: "week", n: n + 1}),
+  streak: n => ({type: "streak", n}),
+  sessions: n => ({type: "sessions", n}),
+  checkpoint: n => ({type: "phases", n}),
+  retest: {type: "retests", n: 1},
+  done: {type: "done", n: 1},
+  checkins: n => ({type: "checkins", n}),
 };
-const CATS = [["fightwear", "Fightwear"], ["leisure", "Leisure"], ["casual", "Casual"]];
-const I = (id, cat, slot, name, rarity, unlock, desc) => ({id, cat, slot, name, rarity, unlock, desc,
-  img: slot === "outfit" ? null : `media/items/${id}.webp`});
+const CAT_OF = {S: "sportswear", C: "casual", F: "footwear", G: "gear"};
+const I = (id, slot, name, rarity, unlock, desc) => ({id: id.toLowerCase(), cat: CAT_OF[id[0]], slot, name, rarity, unlock, desc,
+  img: `media/locker/items/${id.toLowerCase()}.webp`, slots: slot === "set" ? ["top", "bottom"] : [slot]});
 const ITEMS = [
-  // fightwear: starter kit
-  I("rash-black",      "fightwear", "top",    "Black rashguard",         "common",    {type: "start"}, "The everyday uniform. Tight, black, no nonsense."),
-  I("shorts-yokkao",   "fightwear", "shorts", "YOKKAO camo shorts",      "rare",      {type: "start"}, "Dark purple camo. Classic Thai cut."),
-  I("wraps-lime",      "fightwear", "wraps",  "Lime wraps",              "common",    {type: "start"}, "4.5 m, wrapped tight. Swole's signature colour."),
-  I("shins-fairtex",   "fightwear", "shins",  "Fairtex shin guards",     "rare",      {type: "start"}, "Black leather. For the hard sparring days."),
-  // fightwear: earned
-  I("head-black",      "fightwear", "head",   "Black headgear",          "common",    {type: "checkins", n: 3},  "Full-face protection for sparring rounds."),
-  I("wraps-bear",      "fightwear", "wraps",  "Bear wraps",              "common",    {type: "sessions", n: 3},  "Cute on the outside. Still hits hard."),
-  I("mouth-gator",     "fightwear", "mouth",  "Gator mouthguard",        "rare",      {type: "checkins", n: 10}, "Bite down. Show teeth."),
-  I("wraps-dragon",    "fightwear", "wraps",  "Dragon wraps",            "rare",      {type: "streak", n: 5},    "Five mornings in a row."),
-  I("wraps-skull",     "fightwear", "wraps",  "Skull quick-wraps",       "rare",      {type: "sessions", n: 10}, "Neon gel wraps for fast pad rounds."),
-  I("shorts-leaf",     "fightwear", "shorts", "White leaf shorts",       "rare",      {type: "tests", n: 4},     "Finish the test week."),
-  I("gloves-eyeball",  "fightwear", "gloves", "Eyeball gloves",          "epic",      {type: "sessions", n: 20}, "They see everything coming."),
-  I("gloves-tokidoki", "fightwear", "gloves", "Tokidoki gloves",         "epic",      {type: "streak", n: 14},   "Two weeks of mornings without a miss."),
-  I("shorts-elsol",    "fightwear", "shorts", "El Sol shorts",           "epic",      {type: "week", n: 6},      "Reach your first deload week."),
-  I("shorts-fist",     "fightwear", "shorts", "Fist satin shorts",       "epic",      {type: "sessions", n: 35}, "Silver satin. Earned the hard way."),
-  I("gloves-holo",     "fightwear", "gloves", "Holo gloves",             "epic",      {type: "week", n: 12},     "Make it to the week 12 retest."),
-  I("gloves-barong",   "fightwear", "gloves", "Barong gloves",           "legendary", {type: "sessions", n: 60}, "Sixty sessions. A guardian on each fist."),
-  I("head-gladiator",  "fightwear", "head",   "Gladiator headgear",      "legendary", {type: "streak", n: 30},   "Thirty mornings straight. Enter the arena."),
-  I("shorts-tassel",   "fightwear", "shorts", "Fight-night tassel shorts","legendary",{type: "week", n: 26},     "Finish all 26 weeks. Walk out like a champion."),
-  // leisure (full outfits)
-  I("l-black",         "leisure",   "outfit", "All-black lounge set",    "common",    {type: "start"},           "Oversized crew, long shorts, iced coffee."),
-  I("l-brown",         "leisure",   "outfit", "Mocha hoodie set",        "rare",      {type: "sessions", n: 8},  "Hood up, recovery mode."),
-  I("l-charcoal",      "leisure",   "outfit", "Charcoal fleece set",     "epic",      {type: "streak", n: 21},   "Three weeks of mornings. Cozy is earned."),
-  // casual (full outfits)
-  I("c-blacktee",      "casual",    "outfit", "Black tee & pleats",      "common",    {type: "start"},           "Clean, black, effortless."),
-  I("c-jorts",         "casual",    "outfit", "Cream crew & jorts",      "common",    {type: "checkins", n: 7},  "One week of check-ins."),
-  I("c-knit",          "casual",    "outfit", "Pattern knit & clogs",    "rare",      {type: "checkins", n: 14}, "Two weeks of check-ins."),
-  I("c-retro",         "casual",    "outfit", "Retro neckerchief",       "rare",      {type: "streak", n: 7},    "Seven days in a row. Very dapper."),
-  I("c-fleece",        "casual",    "outfit", "Sherpa & cargos",         "rare",      {type: "sessions", n: 15}, "Fifteen sessions done."),
-  I("c-jersey",        "casual",    "outfit", "Jersey 46",               "epic",      {type: "checkins", n: 45}, "45 check-ins. Earth tones only."),
-  I("c-racing",        "casual",    "outfit", "Candy racing jacket",     "legendary", {type: "checkins", n: 100},"100 check-ins. Loud and proud."),
+  // Sportswear
+  I("S01", "top",    "Plain tee, black",                 "common",    U.start,          "Does the job. Like you, today."),
+  I("S02", "bottom", "Training tights, black",           "common",    U.start,          "Nothing to hide behind."),
+  I("S03", "top",    "Sleeveless tee, grey",             "common",    U.day(2),         "Arms out. Excuses in."),
+  I("S04", "top",    "Short-sleeve rashguard, black",    "common",    U.day(3),         "Tight fit. Loose plans not allowed."),
+  I("S05", "bottom", "2-in-1 shorts, black",             "common",    U.day(5),         "Short on top, serious underneath."),
+  I("S06", "bottom", "Sweatpants, heather grey",         "common",    U.day(7),         "Rest days count. So do these."),
+  I("S07", "top",    "Plain tee, white",                 "common",    U.chest(1),       "Clean slate. Keep it that way."),
+  I("S08", "top",    "Pullover hoodie, black",           "common",    U.chest(1),       "Hood up. Head down. Show up."),
+  I("S09", "top",    "Sports top, black",                "common",    U.chest(2),       "Built for moving, not posing."),
+  I("S10", "top",    "Half-zip training top, cobalt",    "rare",      U.streak(7),      "Zipped. Ready. Unbothered."),
+  I("S11", "top",    "Long-sleeve rashguard, charcoal",  "rare",      U.sessions(10),   "Ten in. Now it fits."),
+  I("S12", "bottom", "Retro running shorts, 3\"",        "rare",      U.chest(2),       "Short shorts. Long run."),
+  I("S13", "bottom", "Track pants with side stripe",     "rare",      U.chest(3),       "Stripe down the side. Straight line forward."),
+  I("S14", "top",    "Mesh basketball tank",             "rare",      U.chest(3),       "Air in. Doubt out."),
+  I("S15", "top",    "Compression long-sleeve",          "rare",      U.chest(4),       "Holds you together. Mostly."),
+  I("S16", "top",    "Wind shell half-zip, sand",        "epic",      U.checkpoint(1),  "Weatherproof. Excuse-proof."),
+  I("S17", "top",    "90s football jersey",              "epic",      U.streak(14),     "Two weeks. Wear it like a trophy."),
+  I("S18", "top",    "Heavyweight hoodie, washed black", "epic",      U.sessions(25),   "Heavy cotton. Heavier habit."),
+  I("S19", "bottom", "Heavyweight sweatpants, washed black","epic",   U.sessions(25),   "Pair with the hoodie. And the habit."),
+  I("S20", "bottom", "Fight shorts with Stop crest",     "epic",      U.sessions(20),   "Proof, not promises."),
+  I("S21", "top",    "Reflective night-run jacket",      "epic",      U.checkpoint(2),  "Seen in the dark. Seen every week."),
+  I("S22", "set",    "Seamless training set, bone",      "legendary", U.streak(30),     "A month without a gap. Literally."),
+  I("S23", "top",    "Hand-dyed worn-in hoodie",         "legendary", U.sessions(50),   "Price approves. Rare."),
+  I("S24", "top",    "Champion's warm-up jacket",        "legendary", U.retest,         "You vs. you. You won."),
+  I("S25", "top",    "No Tag rashguard",                 "valor",     U.checkins(40),   "Nothing to prove."),
+  // Casual
+  I("C01", "top",    "Crewneck sweatshirt, grey",        "common",    U.day(2),         "The uniform of people who showed up."),
+  I("C02", "top",    "Oversized tee, cream",             "common",    U.day(3),         "Loose fit. Tight schedule."),
+  I("C03", "bottom", "Wide basketball shorts, black",    "common",    U.day(5),         "Room to move. No room for excuses."),
+  I("C04", "bottom", "Wide trousers, charcoal",          "common",    U.chest(1),       "Off duty. Still on plan."),
+  I("C05", "outer",  "Track jacket, black",              "common",    U.chest(2),       "Zip it. Go."),
+  I("C06", "outer",  "Cropped puffer vest, forest green","rare",      U.chest(2),       "Warm core. Cold stare."),
+  I("C07", "outer",  "Cropped puffer jacket, rosewood",  "rare",      U.streak(7),      "Seven days. Now you can afford to look expensive."),
+  I("C08", "top",    "Fleece half-zip, oat",             "rare",      U.chest(3),       "Soft outside. Not inside."),
+  I("C09", "bottom", "Denim jorts, washed blue",         "rare",      U.chest(3),       "Summer legs earned in winter."),
+  I("C10", "bottom", "Long sports skirt with slit",      "rare",      U.chest(4),       "Moves when you move."),
+  I("C11", "bottom", "Parachute pants, slate",           "rare",      U.sessions(10),   "Wide. Light. Gone before you notice."),
+  I("C12", "top",    "Knit polo, chocolate",             "rare",      U.chest(5),       "Collar up for the ones who stayed."),
+  I("C13", "outer",  "Long puffer coat, black",          "epic",      U.checkpoint(1),  "Built for January. Worn by February survivors."),
+  I("C14", "outer",  "Leather track jacket, oxblood",    "epic",      U.chest(6),       "Six weeks in. It fits like it knows you."),
+  I("C15", "outer",  "Stop varsity jacket",              "epic",      U.checkins(20),   "Lettered in showing up."),
+  I("C16", "top",    "Distressed oversized knit, ash",   "epic",      U.sessions(40),   "Looks lazy. Took effort."),
+  I("C17", "set",    "Tailored tracksuit, ink",          "legendary", U.streak(60),     "Two months. Dress like it."),
+  I("C18", "outer",  "Oversized shearling coat",         "legendary", U.done,           "You walked the whole thing. Stay warm."),
+  I("C19", "outer",  "Stop crew bomber, embroidered",    "legendary", U.streak(100),    "Only the gang wears this. Now you do."),
+  I("C20", "outer",  "Mended chore coat",                "valor",     U.checkins(75),   "Worn in. Earned in."),
+  // Footwear
+  I("F01", "shoes",  "Rubber flip-flops, black",         "common",    U.start,          "Recovery has a dress code."),
+  I("F02", "shoes",  "Pool slides, white",               "common",    U.day(3),         "Slide in. Slide out. Come back tomorrow."),
+  I("F03", "shoes",  "Canvas high-tops, off-white",      "common",    U.chest(1),       "Classic. Like turning up."),
+  I("F04", "shoes",  "Everyday runners, grey",           "common",    U.day(7),         "They go where you go. Today, that's out."),
+  I("F05", "shoes",  "Flat training shoes, black",       "rare",      U.chest(2),       "Flat sole. Solid base."),
+  I("F06", "shoes",  "Retro trainers, cream and navy",   "rare",      U.streak(7),      "Old school. New habit."),
+  I("F07", "shoes",  "Trail runners, moss",              "rare",      U.chest(4),       "The path isn't always paved."),
+  I("F08", "shoes",  "Platform sneakers, black",         "rare",      U.chest(5),       "A little taller. Same feet on the ground."),
+  I("F09", "shoes",  "Chunky sneakers, white and steel", "epic",      U.streak(14),     "Loud shoes. Quiet discipline."),
+  I("F10", "shoes",  "Max-cushion runners, white and cobalt","epic",  U.sessions(25),   "For people who actually run."),
+  I("F11", "shoes",  "Retro basketball high-tops, sky",  "epic",      U.checkpoint(2),  "Bought in the 90s. Earned in the 20s."),
+  I("F12", "shoes",  "Boxing boots, black",              "epic",      U.sessions(30),   "Light feet. Heavy proof."),
+  I("F13", "shoes",  "Carbon-plate racers",              "legendary", U.retest,         "Fast shoes for people who don't need them."),
+  I("F14", "shoes",  "Hand-made leather sneakers, bone", "legendary", U.streak(60),     "Made slowly. Like you."),
+  I("F15", "shoes",  "Gold-sole worn runners",           "valor",     U.checkins(120),  "Soles don't lie."),
+  // Gear
+  I("G01", "hands",  "Hand wraps, black",                "common",    U.start,          "Wrap up. Show up."),
+  I("G02", "acc",    "Skipping rope",                    "common",    U.day(2),         "Cheap rope. Expensive habit."),
+  I("G03", "head",   "Beanie, charcoal",                 "common",    U.day(3),         "Up before the sun. Ears covered."),
+  I("G04", "head",   "Cap, black",                       "common",    U.day(5),         "Brim down. Plan up."),
+  I("G05", "acc",    "Steel water bottle",               "common",    U.chest(1),       "Drink water. Keep promises."),
+  I("G06", "hands",  "Sweatband set, white",             "common",    U.chest(2),       "Proof you sweated."),
+  I("G07", "acc",    "Gym duffel, black",                "rare",      U.chest(2),       "Packed the night before."),
+  I("G08", "acc",    "Steel-cable speed rope",           "rare",      U.streak(7),      "Faster rope. Same feet."),
+  I("G09", "head",   "Bucket hat, washed khaki",         "rare",      U.chest(3),       "Low profile. High standards."),
+  I("G10", "head",   "Wraparound sunglasses, black",     "rare",      U.chest(4),       "Don't look at the excuse."),
+  I("G11", "hands",  "Training gloves 14 oz",            "rare",      U.sessions(10),   "Ten sessions. Now hit something."),
+  I("G12", "acc",    "Shin guards, black",               "rare",      U.chest(5),       "Kick first. Talk later."),
+  I("G13", "head",   "Over-ear headphones, matte black", "epic",      U.streak(14),     "Noise off. Work on."),
+  I("G14", "hands",  "Leather boxing gloves, oxblood",   "epic",      U.checkpoint(1),  "Real leather for real rounds."),
+  I("G15", "head",   "Headguard, leather",               "epic",      U.sessions(20),   "Protect the head that made the plan."),
+  I("G16", "acc",    "Silver chain",                     "epic",      U.chest(6),       "Not jewellery. A receipt."),
+  I("G17", "hands",  "Sports watch, steel",              "epic",      U.sessions(25),   "Counts time. You count sessions."),
+  I("G18", "hands",  "Hand-stitched gloves",             "legendary", U.streak(30),     "Made to measure. Earned to the day."),
+  I("G19", "acc",    "Weighted leather rope",            "legendary", U.streak(60),     "Heavier rope. You can take it."),
+  I("G20", "acc",    "Signature gym bag, Stop crest",    "legendary", U.done,           "Carry the whole Path."),
 ];
-/* outfit renders: filled in when the Magnific renders land (media/outfits/<id>.webp + -thumb.webp) */
-const OUTFIT_READY = ["l-black","l-brown","l-charcoal","c-blacktee","c-jorts","c-knit","c-retro","c-fleece","c-jersey","c-racing"];
-ITEMS.forEach(it => { if (it.slot === "outfit" && OUTFIT_READY.includes(it.id)){ it.img = `media/outfits/${it.id}-thumb.webp`; it.look = `media/outfits/${it.id}.webp`; } });
+/* Signature looks: two per v2 Swole. Shown when every piece is owned and worn. */
+const L = (n, name, items) => ({n, name, items: items.map(s => s.toLowerCase())});
+const LOOKS = {
+  ghost:  [L(1, "Night run", ["S21","S02","F10","G13"]),     L(2, "Off duty", ["C13","C04","F03","G03"])],
+  monday: [L(1, "Matchday", ["S17","S12","F01"]),            L(2, "Recovery", ["S18","S19","F02","G05"])],
+  morrow: [L(1, "Studio", ["S09","C10","F03","C08"]),        L(2, "Sharp", ["C14","C04","F09","G10"])],
+  price:  [L(1, "Expensive quiet", ["C07","S02","F09","G17"]), L(2, "Fight night", ["S04","S20","F12","G14"])],
+  later:  [L(1, "Lunch-break run", ["S01","S12","F13","G17"]), L(2, "Commute", ["C05","S06","F06","G07"])],
+  twoday: [L(1, "Court", ["S14","C03","F11","G06"]),         L(2, "Lazy Sunday", ["C02","C09","F01","G09"])],
+  snooze: [L(1, "5 a.m.", ["S08","S05","F04","G03"]),        L(2, "Night owl", ["C16","C11","F08","G13"])],
+  glory:  [L(1, "Streetball", ["S14","C03","F11","G04"]),    L(2, "Champion", ["S24","S13","F06","G16"])],
+  jan:    [L(1, "February", ["C06","S02","F07","G08"]),      L(2, "Gym floor", ["S15","S05","F05","G01"])],
+};
+Object.entries(LOOKS).forEach(([sw, ls]) => ls.forEach(l => { l.sw = sw; l.img = `media/locker/looks/${sw}-${l.n}.webp`; l.thumb = `media/locker/looks/${sw}-${l.n}-thumb.webp`; }));
+const SWOLE_NAMES = {ghost: "Ghost", monday: "Monday", morrow: "Morrow", price: "Price", later: "Later", twoday: "Two-day", snooze: "Snooze", glory: "Glory", jan: "Jan"};
+
 const UNLOCK_TEXT = {
   start: () => "Starter kit",
-  checkins: n => `Check in ${n} times`,
+  checkins: n => `Check in on ${n} days`,
   streak: n => `Check in ${n} days in a row`,
   sessions: n => `Log ${n} sessions as done`,
+  week: n => `Finish week ${n - 1} of your Path`,
+  phases: n => `Finish phase ${n} of your Path`,
+  retests: () => "Retest one of your tests",
+  done: () => "Finish your whole Path",
   tests: n => `Log ${n} different tests`,
-  week: n => `Reach week ${n}`,
 };
-/* outline icons for items without a thumbnail yet */
+/* outline icon, only used if an image fails to load */
 const SLOT_ICON = {
-  top: `<path d="M8 4 4 7l2 4 2-1v10h8V10l2 1 2-4-4-3c-.5 1.5-2 2.5-4 2.5S8.5 5.5 8 4z"/>`,
-  hoodie: `<path d="M9 4c0-1 6-1 6 0l4 3-2 4-1-1v10H8V10l-1 1-2-4z"/><path d="M10 4c0 3 4 3 4 0M11 14h2"/>`,
-  shorts: `<path d="M5 5h14l1 13-6 1-2-6-2 6-6-1z"/><path d="M5 8h14"/>`,
-  wraps: `<path d="M7 13V7a2 2 0 0 1 4 0v4V6a2 2 0 0 1 4 0v5-3a2 2 0 0 1 4 0v6c0 4-3 6-6 6s-6-2-6-6z"/><path d="M7 15h12M7 18h11"/>`,
-  gloves: `<path d="M6 10a6 6 0 0 1 12 0v4c0 3-2 5-5 5h-2c-3 0-5-2-5-5z"/><path d="M8 19v2h8v-2M6 12c2 0 3 1 3 3"/>`,
-  shins: `<path d="M8 3h7l1 13-1 4H9l-1-4z"/><path d="M8 8h8M9 20l-2 1h10"/>`,
-  shoes: `<path d="M3 16c0-3 1-6 3-7l3 2 3-1 3 3c2 1 6 1 6 3v2H3z"/><path d="M3 18h18"/>`,
-  head: `<path d="M4 12c0-4 4-6 8-6s8 2 8 6"/><path d="M4 12c3 2 13 2 16 0M12 6c1-2 3-3 5-3"/>`,
-  arms: `<path d="M6 8c3-2 9-2 12 0v3c-3-2-9-2-12 0z"/><path d="M12 11c0 3-1 6-3 9M12 11c0 3 1 6 3 9"/>`,
-  mouth: `<path d="M4 10c2-3 14-3 16 0-1 5-4 7-8 7s-7-2-8-7z"/><path d="M7 11h10M9 11v3M12 11v3M15 11v3"/>`,
-  outfit: `<path d="M8 3 4 6l2 4 2-1v12h8V9l2 1 2-4-4-3-2 2h-4z"/><path d="M10 14h4"/>`,
   extra: `<circle cx="12" cy="12" r="6"/><path d="M6 12h12M12 6v12"/>`,
 };
 
@@ -83,12 +160,18 @@ function lockerStats(){
     run = prev && daysBetween(parse(prev), parse(d)) === 1 ? run + 1 : 1;
     best = Math.max(best, run); prev = d;
   }
+  const wk = Math.max(0, weekNo(new Date()));
+  const ph = (typeof PHASES !== "undefined" ? PHASES : []);
+  const last = ph.length ? Math.max(...ph.map(p => p.w[1])) : 1e9;
   return {
     checkins: days.length,
     streak: best,
     sessions: Object.values(S.sessions || {}).filter(s => s && s.status === "done").length,
     tests: Object.keys(S.tests || {}).filter(k => k !== "weight" && S.tests[k] && (S.tests[k].history || []).length).length,
-    week: Math.max(0, weekNo(new Date())),
+    retests: Object.keys(S.tests || {}).filter(k => k !== "weight" && S.tests[k] && (S.tests[k].history || []).length >= 2).length,
+    week: wk,
+    phases: ph.filter(p => !p.deload && p.w[1] < wk).length,
+    done: wk > last ? 1 : 0,
   };
 }
 function itemState(it, st){
@@ -98,16 +181,23 @@ function itemState(it, st){
   return {open: have >= u.n, have: Math.min(have, u.n), need: u.n};
 }
 function lockerData(){ return S.settings.locker || {equipped: {}}; }
+const STARTER = {top: "s01", bottom: "s02", shoes: "f01", hands: "g01"};
 function equipped(){
-  const eq = {...(lockerData().equipped || {})};
-  ITEMS.filter(i => i.unlock.type === "start" && i.slot !== "outfit").forEach(i => { if (!(i.slot in eq)) eq[i.slot] = i.id; });
+  const raw = {...(lockerData().equipped || {})}, eq = {};
+  Object.entries(raw).forEach(([slot, id]) => { if (SLOTS[slot] && ITEMS.some(i => i.id === id)) eq[slot] = id; });   // drops v1 items
+  SLOT_FIXED.forEach(s => { if (!eq[s]) eq[s] = STARTER[s]; });
+  if (!lockerData().equipped || lockerData().v !== 2) { if (!eq.hands) eq.hands = STARTER.hands; }
   return eq;
 }
-function outfitLook(){   // the render Swole should wear, if an outfit with a render is equipped
-  if (window.SWOLE_FIGHTER) return null;   // outfit renders exist for Swole only (other roster Swoles wear the starter kit)
-  const id = equipped().outfit; const it = id && ITEMS.find(i => i.id === id);
-  return it && it.look ? it.look : null;
+const isWorn = (id, eq) => Object.values(eq || equipped()).includes(id);
+function mySwole(){ const f = window.SWOLE_FIGHTER; return f && LOOKS[f] ? f : null; }
+function currentLook(){
+  const sw = mySwole(); if (!sw) return null;
+  const eq = equipped(), st = lockerStats();
+  return LOOKS[sw].find(l => l.items.every(id => isWorn(id, eq) && itemState(ITEMS.find(i => i.id === id), st).open)) || null;
 }
+function outfitLook(){ const l = currentLook(); return l ? l.img : null; }   // the render your Swole wears, if a full look is on
+function lookProgress(l, st){ return l.items.filter(id => itemState(ITEMS.find(i => i.id === id), st).open).length; }
 function newUnlocks(){
   const st = lockerStats(), seen = LS.get("swole:lockerSeen", []);
   return ITEMS.filter(i => i.unlock.type !== "start" && itemState(i, st).open && !seen.includes(i.id)).map(i => i.id);

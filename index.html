@@ -11,10 +11,10 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Swole">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=41">
-<link rel="icon" type="image/png" href="icons/icon-192.png?v=41">
-<link rel="preload" href="fonts/TerzaDisplay-Regular.woff2?v=41" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="fonts/Metrim-Regular.woff2?v=41" as="font" type="font/woff2" crossorigin>
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=44">
+<link rel="icon" type="image/png" href="icons/icon-192.png?v=44">
+<link rel="preload" href="fonts/TerzaDisplay-Regular.woff2?v=44" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/Metrim-Regular.woff2?v=44" as="font" type="font/woff2" crossorigin>
 <style>
 /* Layout: warm graphite soft-UI phone app, red accent. Glass cards, Swole breaking out over the hero card's top edge, pill CTAs with teal glow, floating icon tab bar. Single committed dark look. */
 :root{
@@ -595,6 +595,24 @@ input[type=number],input[type=text],input[type=password],textarea{background:#F2
 .lcat{height:34px;padding:0 13px;border-radius:999px;border:0;background:#373737;color:#FFFFFF;font:700 14px/1 var(--f);letter-spacing:-.01em}
 .lcat[aria-pressed=true]{background:#111111}
 .lgrid{top:calc(env(safe-area-inset-top,0px) + 116px)}
+/* v43 locker v2 */
+.lcats{left:max(16px,env(safe-area-inset-left,0px));right:0;overflow-x:auto;scrollbar-width:none;padding-right:16px}
+.lcats::-webkit-scrollbar{display:none}
+.lcat{flex:0 0 auto}
+.llooks{position:absolute;z-index:1;top:calc(env(safe-area-inset-top,0px) + 116px);bottom:calc(92px + env(safe-area-inset-bottom,0px));left:max(16px,env(safe-area-inset-left,0px));width:min(52vw,230px);display:flex;flex-direction:column;gap:12px;overflow-y:auto;scrollbar-width:none;padding-bottom:20px}
+.llooks.none p{color:#FFFFFF;font:600 15px/1.35 var(--f);margin:0;padding:14px;border-radius:16px;background:#0A0A0A}
+.llook{position:relative;display:grid;grid-template-columns:72px 1fr;grid-template-rows:auto auto 1fr;column-gap:10px;align-items:start;text-align:left;border:0;border-radius:16px;padding:8px 10px 16px 8px;background:radial-gradient(120% 90% at 30% 20%,#232323 0%,#0A0A0A 70%);color:#FFFFFF}
+.llook .llimg{grid-row:1 / 4;width:72px;height:72px;border-radius:12px;overflow:hidden;background:#1A1A1A}
+.llook .llimg img{width:100%;height:100%;object-fit:cover;object-position:top}
+.llook b{font:800 16px/1.15 var(--f);margin-top:6px}
+.llook small{font:600 12px/1.3 var(--f);color:rgba(255,255,255,.7);margin-top:3px}
+.llook .prog{position:absolute;left:90px;right:12px;bottom:10px;height:3px;border-radius:2px;background:#262626;overflow:hidden}
+.llook .prog i{display:block;height:100%;background:#FFFFFF}
+.llook.locked .llimg img{filter:saturate(.4) brightness(.55)}
+.llook.on{box-shadow:0 0 0 2.5px #FFFFFF}
+.lpieces{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0}
+.idet.look .iart img{object-fit:contain}
+.imiss{display:block;width:100%;height:100%}
 .lfig img{height:100%;width:auto}
 /* v14: true full bleed on iOS standalone (layout viewport can stop above the home indicator) */
 html{background:var(--paper2)}
@@ -934,6 +952,7 @@ html.ob-open,html.ob-open body{overflow:hidden}
 .obfighter{display:flex;flex-direction:column;align-items:center;gap:2px;border:2px solid #E2E2E2;background:#F3F3F3;border-radius:16px;padding:8px 2px;color:#111111;overflow:hidden}
 .obfighter img{height:140px;width:100%;object-fit:contain;object-position:bottom}
 .obfighter b{font-family:var(--fd);font-size:22px;line-height:1;text-transform:uppercase}
+.obfname{font:700 12px/1.1 var(--f);color:#111111;margin-top:2px}
 .obfighter.on{border-color:#000000;background:#F5F5F5}
 .obavwrap{display:flex;flex-direction:column;align-items:center;gap:6px}
 .obtabs{display:flex;gap:6px;background:#EDEDED;border-radius:999px;padding:4px}
@@ -960,8 +979,8 @@ html.ob-open,html.ob-open body{overflow:hidden}
 .obsum{display:flex;flex-wrap:wrap;gap:8px}.obsum span{background:#EDEDED;border-radius:999px;padding:8px 12px;font:600 13px var(--f)}
 
 /* ================= v35 · black & white. Metrim logo, Terza Display for the rest ================= */
-@font-face{font-family:"Metrim";src:url("fonts/Metrim-Regular.woff2?v=41") format("woff2");font-display:block}
-@font-face{font-family:"Terza Display";src:url("fonts/TerzaDisplay-Regular.woff2?v=41") format("woff2");font-display:swap}
+@font-face{font-family:"Metrim";src:url("fonts/Metrim-Regular.woff2?v=44") format("woff2");font-display:block}
+@font-face{font-family:"Terza Display";src:url("fonts/TerzaDisplay-Regular.woff2?v=44") format("woff2");font-display:swap}
 :root{
   --fd:"Terza Display","Iowan Old Style",Georgia,serif;
   --logo:"Metrim","Terza Display",Georgia,serif;
@@ -1166,6 +1185,91 @@ input,textarea,select,button{font-family:var(--fd)}
 .obgwrow .obchips{padding-bottom:8px}
 .ex.chk .exm .dose{text-align:left;opacity:.85}
 .obcoaches.all{gap:6px}.obcoaches.all .obcoach{padding:6px 12px}.obcoaches.all .obcoach img{height:56px}
+/* v42: four questions to a Path */
+.obnums{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:18px 0 6px}
+.obnum{aspect-ratio:1/1;max-height:62px;border-radius:16px;border:1.5px solid #000000;background:#FFFFFF;color:#000000;font:400 22px/1 var(--f)}
+.obnum.on,.obnum:active{background:#000000;color:#FFFFFF}
+.obwant .obchips{margin-top:14px}
+.obwant .obnote{margin-top:12px}
+.pcoach{display:flex;gap:10px;align-items:flex-start;margin:10px 0 4px;padding:12px 14px;border-radius:18px;background:#F2F2F2;text-align:left}
+.pcoach .hd{flex:none}
+.pcoach p{margin:0;font-size:14px;line-height:1.35;color:#111111}.pcoach p b{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;font-weight:400;color:#686868;margin-bottom:2px}
+/* ===== v44 · SHOW-OFF LAYER (rings, gym floor, session + drop cards, receipts, drafts, story) ===== */
+[data-tier="rare"]{--tc:#8A8A8A}[data-tier="epic"]{--tc:#D6D6D6}[data-tier="legendary"]{--tc:#FFFFFF}[data-tier="valor"]{--tc:#C9A13B}
+.hd[data-tier]{box-shadow:0 0 0 2px var(--card),0 0 0 4.5px var(--tc)}
+.hd[data-tier="legendary"],.hd[data-tier="valor"]{box-shadow:0 0 0 2px var(--card),0 0 0 4.5px var(--tc),0 0 0 6.5px var(--card),0 0 0 8px var(--tc)}
+.sr .hd,.act .hd{box-shadow:none}
+.hdb{border:0;background:none;padding:4px;margin:-4px;border-radius:50%;line-height:0}
+.ttag{position:absolute;top:8px;left:8px;z-index:2;font:800 8.5px/1 var(--f);font-style:normal;letter-spacing:.08em;text-transform:uppercase;padding:4px 6px;border-radius:6px;background:#111111;color:#FFFFFF}
+.ttag[data-tier="valor"]{background:#C9A13B;color:#111111}
+.ttag[data-tier="legendary"]{background:#111111;color:#FFFFFF;box-shadow:inset 0 0 0 1.5px #FFFFFF,0 0 0 1.5px #111111}
+.ttag.tin{position:static;display:inline-block;width:auto;height:auto;margin:6px 0 2px;vertical-align:middle}
+.sh3 .ttag.tin{margin:0 0 0 6px;vertical-align:3px}
+/* gym floor: the Swoles of who's coming */
+.floor{display:flex;align-items:flex-end;gap:0;margin-top:4px;height:62px}
+.flp{position:relative;width:32px;height:62px;border:0;background:none;padding:0;margin-right:-4px;flex:none}
+.flp .bd{height:100%}
+.flp[data-tier]::after{content:"";position:absolute;left:5px;right:5px;bottom:-2px;height:3px;border-radius:2px;background:var(--tc);box-shadow:0 0 8px var(--tc)}
+.flp.me::before{content:"You";position:absolute;top:-4px;left:50%;transform:translateX(-50%);z-index:2;font:800 8px/1 var(--f);padding:2px 4px;border-radius:4px;background:#FFFFFF;color:#111111}
+.floor em{font-style:normal;margin-left:10px;margin-bottom:6px;font:700 11px/1 var(--f);color:var(--muted)}
+/* session card */
+.smedia{position:relative;height:340px;background:radial-gradient(110% 80% at 50% 30%,#2E2E2E,#0A0A0A);overflow:hidden}
+.smedia[data-tier]{box-shadow:inset 0 -4px 0 var(--tc)}
+.sword{position:absolute;left:4%;top:7%;width:92%;height:auto}
+.sword text{font-family:var(--fd);font-weight:700;font-size:300px;fill:#FFFFFF;opacity:.13}
+.sfig{position:absolute;left:0;right:0;top:4%;bottom:56px;border:0;background:none;padding:0}
+.sfig .bd{height:100%}
+.proof{position:absolute;top:12px;right:12px;padding:6px 9px;border-radius:999px;background:rgba(255,255,255,.12);color:#FFFFFF;font:800 11px/1 var(--f);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.proof.v{background:#FFFFFF;color:#111111}
+.slook{position:absolute;top:12px;left:12px;padding:6px 9px;border-radius:999px;background:#C9A13B;color:#111111;font:800 10px/1 var(--f);letter-spacing:.06em;text-transform:uppercase}
+.kitstrip{position:absolute;left:10px;right:10px;bottom:10px;display:flex;gap:6px;justify-content:center}
+.kchip{width:42px;height:42px;border:0;border-radius:11px;padding:4px;background:#E9E9E9;box-shadow:inset 0 -3px 0 var(--rc);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.kchip img{width:100%;height:100%;object-fit:contain}
+.pmeta{display:block;color:var(--muted);font-size:12px;margin:-2px 0 6px}
+/* drop card */
+.umedia{position:relative;height:300px;background:radial-gradient(80% 65% at 50% 45%,#333333,#0A0A0A);overflow:hidden;box-shadow:inset 0 0 0 3px var(--rc)}
+.umedia[data-r="legendary"]{box-shadow:inset 0 0 0 3px #FFFFFF,inset 0 0 0 7px #0A0A0A,inset 0 0 0 9px #FFFFFF}
+.umedia[data-r="valor"]{background:radial-gradient(80% 65% at 50% 45%,#5A4612,#0A0A0A);box-shadow:inset 0 0 0 3px #C9A13B,inset 0 0 0 7px #0A0A0A,inset 0 0 0 9px #C9A13B}
+.umedia .uimg{position:absolute;left:18%;top:14%;width:64%;height:70%;object-fit:contain;filter:drop-shadow(0 18px 24px rgba(0,0,0,.55))}
+.umedia .rchip{position:absolute;left:14px;bottom:14px}
+.rchip[data-r="epic"],.rchip[data-r="legendary"]{color:#FFFFFF}
+.rchip[data-r="legendary"]{box-shadow:inset 0 0 0 1.5px #FFFFFF}
+.rchip[data-r="valor"]{background:#C9A13B}
+.pbody .rcpt{color:#FFFFFF;font-weight:600}
+.pfoot .addp + .addp{margin-left:0}
+.pfoot .have{margin-left:auto;color:var(--muted);font:700 12px/1 var(--f)}
+.pfoot .addp.chs + .have{margin-left:0}
+.rcount{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font:700 12px/1 var(--f)}
+/* drafts */
+.drafts{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
+.draft{background:#111111;color:#FFFFFF;border-radius:22px;padding:12px 14px 14px;box-shadow:0 10px 24px rgba(17,17,17,.14)}
+.drhd{display:flex;justify-content:space-between;align-items:center}
+.drhd small{color:var(--muted);font-size:11px}
+.drrow{display:grid;grid-template-columns:60px 1fr;gap:12px;align-items:center;margin:8px 0 12px}
+.drrow .th{position:relative;height:72px;border-radius:14px;background:#262626;overflow:hidden;box-shadow:inset 0 -3px 0 var(--rc,transparent)}
+.drrow .th > img{position:absolute;inset:8%;width:84%;height:84%;object-fit:contain}
+.drrow b{display:block;font-size:15px}.drrow small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.dract{display:flex;gap:8px;align-items:center}
+.dract .pill{padding:11px 18px;font-size:12px;background:#FFFFFF;color:#111111;box-shadow:none}
+.dract .ghost-s{background:#2A2A2A}
+/* inspect + receipts */
+.yfig{display:block;width:100%;border:0;background:none;padding:0}
+.kitnote{font-size:12px;margin:-4px 0 8px}
+.kitgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.kitgrid .ltile{aspect-ratio:1}
+.kitgrid .ltile.on{box-shadow:inset 0 -3px 0 var(--rc)}
+.rcard{height:220px;border-radius:24px;background:radial-gradient(80% 70% at 50% 40%,#333333,#0A0A0A);box-shadow:inset 0 -5px 0 var(--rc);display:grid;place-items:center;margin:4px 0 12px}
+.rcard[data-r="valor"]{background:radial-gradient(80% 70% at 50% 40%,#5A4612,#0A0A0A);box-shadow:inset 0 0 0 3px #C9A13B}
+.rcard[data-r="legendary"]{box-shadow:inset 0 0 0 3px #FFFFFF}
+.rcard{position:relative}.rcard img{position:absolute;inset:11%;width:78%;height:78%;object-fit:contain}
+.rbox{margin:10px 0}.rbox h3{margin:4px 0 4px;color:#FFFFFF;font-size:17px}.rbox small{color:var(--muted);font-size:12px}
+.chase{display:flex;flex-direction:column;gap:8px}
+.chrow{display:grid;grid-template-columns:52px 1fr auto;gap:12px;align-items:center;border:0;background:var(--card);color:#FFFFFF;border-radius:16px;padding:8px 14px 8px 8px;text-align:left;font:inherit;box-shadow:inset 3px 0 0 var(--rc)}
+.chrow img{width:52px;height:52px;object-fit:contain}
+.chrow b{font-size:13.5px}
+.chrow small{display:block;color:var(--muted);font-size:11px;margin:2px 0 6px}
+.chrow em{font-style:normal;font:800 12px/1 var(--f)}
+.storyprev{display:block;width:min(100%,360px);margin:6px auto 14px;border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.2)}
 </style>
 </head>
 <body>
@@ -1179,14 +1283,14 @@ input,textarea,select,button{font-family:var(--fd)}
 </nav></div>
 <div class="sheet" id="sheet" hidden><div class="in" id="sheetIn"></div></div>
 <div class="toast" id="toast" hidden></div>
-<script src="plan.js?v=41"></script>
-<script src="locker.js?v=41"></script>
-<script src="social.js?v=41"></script>
-<script src="gen.js?v=41"></script>
-<script src="sb.js?v=41"></script>
-<script src="draw.js?v=41"></script>
-<script src="path.js?v=41"></script>
-<script src="app.js?v=41"></script>
-<script src="onboarding.js?v=41"></script>
+<script src="plan.js?v=44"></script>
+<script src="locker.js?v=44"></script>
+<script src="social.js?v=44"></script>
+<script src="gen.js?v=44"></script>
+<script src="sb.js?v=44"></script>
+<script src="draw.js?v=44"></script>
+<script src="path.js?v=44"></script>
+<script src="app.js?v=44"></script>
+<script src="onboarding.js?v=44"></script>
 </body>
 </html>

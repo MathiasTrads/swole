@@ -25,6 +25,18 @@ const COACH_SAYS = {
   maja:   {test:"Resting heart rate, a walk test, your watch's VO2 max. That's our starting line.", build:"Zone 2 most days, one hard interval session. That's the evidence-based mix.", deload:"Easy week. Sleep and walks still count.", retest:"Let's see your numbers move. Small changes here add up over years."},
 };
 const LEK_GENERIC = COACH_SAYS.tomas;
+/* v42: one coach the whole way. They come back along the Path with a tip or a word of counsel,
+   in the middle of longer phases. No other coach or face appears on the Path. */
+const COACH_TIPS = {
+  anders: ["Log the weight. Next week's target comes from this week's numbers.", "Two reps left in the tank is close enough. Grinding every set slows you down.", "Sleep is part of the program. Short nights show up on the bar."],
+  sara:   ["If you can't talk on an easy day, it isn't easy. Slow down.", "Hard intervals only work if you show up fresh. Protect the day before.", "Your watch's heart rate is a guide, not a judge. Effort counts too."],
+  tomas:  ["Your classes are hard days. Mornings around them stay controlled.", "Breathe out on every strike. Gas tank starts with breathing.", "Tired technique is the technique you fight with. Keep it clean."],
+  ingrid: ["Range you can control beats range you can only reach.", "A little every day beats a lot once a week.", "Discomfort is fine. Sharp pain means back off."],
+  kofi:   ["Most runs should feel too easy. That's the point.", "Shoes, sleep and patience. Three cheap wins.", "Miss a run? Don't make it up. Just run the next one."],
+  maja:   ["Small and steady wins. A walk on a busy day still counts.", "Check your resting heart rate in the morning. It tells you how you recover.", "Strength twice a week protects everything else you do."],
+};
+function coachTip(n){ const t = COACH_TIPS[PROGRAM.trainer] || COACH_TIPS.tomas; return t[n % t.length]; }
+const coachNote = (txt, label) => `<div class="pcoach">${head(PROGRAM.trainer, 34)}<p><b>${esc(PROGRAM.by)}${label ? " · " + esc(label) : ""}</b>${esc(txt)}</p></div>`;
 function coachLine(phKey){
   const gen = typeof PLAN_GENERATED !== "undefined" && PLAN_GENERATED;
   if (PROGRAM.trainer === "tomas" && !gen) return LEK_SAYS[phKey] || "";
@@ -101,10 +113,8 @@ function viewPath(){
   const stars = sess.reduce((a, n) => a + (n.stars || 0), 0);
   const curN = nodes[cur] || sess[sess.length-1];
   const lekSide = OFFS[cur % OFFS.length] > 0 ? "l" : "r";
-  /* friends on the same program, a few nodes ahead (mock) */
-  const ahead = nodes.map((n, i) => i).filter(i => i > cur && nodes[i].type === "sess");
-  const ghosts = {}; if (ahead[1] != null) ghosts[ahead[1]] = "mia"; if (ahead[4] != null) ghosts[ahead[4]] = "noor";
-  let html = "", lastPh = null, lastW = null, si = 0;
+  const curPh = nodes[cur] && nodes[cur].ph;
+  let html = "", lastPh = null, lastW = null, si = 0, tips = 0;
   nodes.forEach((n, i) => {
     if (n.ph !== lastPh){
       lastPh = n.ph;
@@ -113,8 +123,13 @@ function viewPath(){
         <span>${n.ph.w[0] === n.ph.w[1] ? "Week "+n.ph.w[0] : "Weeks "+n.ph.w[0]+"–"+n.ph.w[1]}${deload ? " · rest camp" : ""}</span>
         <b>${deload ? `<i class="pfire">${PICON.fire}</i>` : ""}${esc(n.ph.name)}</b>
         <em>${esc(n.ph.focus[0])}</em></div>`;
+      if (n.ph !== curPh){ const line = coachLine(n.ph.key); if (line) html += coachNote(line); }   // the coach opens every phase (the current one is said by the coach beside you)
     }
-    if (n.w !== lastW){ lastW = n.w; html += `<div class="pweek" data-pw="${n.w}"><span>Week ${n.w} · ${fmt(weekStart(n.w))}</span></div>`; }
+    if (n.w !== lastW){
+      lastW = n.w; html += `<div class="pweek" data-pw="${n.w}"><span>Week ${n.w} · ${fmt(weekStart(n.w))}</span></div>`;
+      const len = n.ph.w[1] - n.ph.w[0] + 1, mid = n.ph.w[0] + Math.floor(len / 2);
+      if (len >= 3 && n.w === mid && n.ph !== curPh) html += coachNote(coachTip(tips++), "tip");
+    }
     const x = OFFS[si++ % OFFS.length];
     if (n.type === "chest"){
       html += `<div class="prow" style="--x:${x}px"><button class="pchest ${n.state}" data-pchest="${n.w}" aria-label="Week ${n.w} chest">${PICON.chest}</button></div>`;
@@ -123,13 +138,12 @@ function viewPath(){
     const k = pkind(n.id), boss = k === "test";
     const icon = n.state === "done" && !boss ? PICON.check : PICON[k] || PICON.strength;
     const starRow = (n.state === "done" || n.state === "part") ? `<span class="pstars">${[0,1,2].map(s => `<i class="${s < n.stars ? "on" : ""}">${PICON.star}</i>`).join("")}</span>` : "";
-    const g = ghosts[i] ? `<span class="pghost" title="${esc(CAST[ghosts[i]].name)} is here">${head(ghosts[i], 30)}<em>${esc(CAST[ghosts[i]].name)}</em></span>` : "";
     const bubble = i === cur ? `<span class="pstart">${iso(n.d) === iso(new Date()) ? "TODAY" : "START"}</span>` : "";
     const lek = i === cur ? `<div class="plek ${lekSide}"><div class="psay"><b>${esc(PROGRAM.by)}</b>${esc(coachLine(n.ph.key))}</div><img src="${castImg(PROGRAM.trainer)}" alt="${esc(PROGRAM.by)}"></div>` : "";
     html += `<div class="prow ${i === cur ? "iscur" : ""}" style="--x:${x}px" ${i === cur ? 'id="pcur"' : ""}>${lek}
       <button class="pnode ${n.state} ${boss ? "boss" : ""}" style="--pc:${PCOLOR[n.ph.key] === "#6E6564" ? "#000000" : (PCOLOR[n.ph.key] || "#000000")}" data-pnode="${n.key}|${n.id}" aria-label="${esc(SESS[n.id].title)}, ${DAY[dow(n.d)]} ${fmt(n.d)}">
         ${bubble}<span class="pface">${icon}</span>${n.state === "current" ? `<span class="pring"></span>` : ""}</button>
-      ${starRow}${g}
+      ${starRow}
       <span class="plabel">${DAY[dow(n.d)]} ${n.d.getDate()}/${n.d.getMonth()+1} · ${esc(SESS[n.id].title.split(" · ")[0])}</span></div>`;
   });
   const pct = Math.round(done / sess.length * 100);

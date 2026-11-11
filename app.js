@@ -290,7 +290,7 @@ const ICON = {
 /* ============ UI STATE ============ */
 let tab = "dag";
 let homeMode = "today";
-let lockerCat = "fightwear";
+let lockerCat = "";
 let schedMode = "week";
 let schedDate = new Date();
 
@@ -377,57 +377,100 @@ function hubBar(){
   return `<div class="hubbar"><button class="hubback" data-act="hubback" aria-label="Back to Today">‹ Today</button><div class="hubseg">${t.map(x => `<button data-hub="${x[0]}" aria-pressed="${homeMode === x[0]}">${x[1]}</button>`).join("")}</div></div>`;
 }
 
-/* ---------- LOCKER ---------- */
+/* ---------- LOCKER (v43: four categories + signature looks) ---------- */
+const itemImg = (it, cls) => `<img src="${it.img}" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'imiss'}))">`;
 function viewLocker(){
   const st = lockerStats(), eq = equipped(), seen = LS.get("swole:lockerSeen", []);
-  const tiles = ITEMS.filter(it => it.cat === lockerCat).map(it => {
-    const s = itemState(it, st), R = RARITY[it.rarity], on = it.slot === "outfit" ? eq.outfit === it.id : (eq[it.slot] === it.id && !eq.outfit), isNew = s.open && it.unlock.type !== "start" && !seen.includes(it.id);
-    return `<button class="ltile ${s.open ? "" : "locked"} ${on ? "on" : ""}" style="--rc:${R.c}" data-item="${it.id}" aria-label="${esc(it.name)}${s.open ? "" : " (locked)"}">
-      ${it.img ? `<img src="${it.img}" alt="" loading="lazy">` : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">${SLOT_ICON[it.slot] || SLOT_ICON.extra}</svg>`}
-      ${s.open ? "" : `<span class="lk"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span><span class="prog"><i style="width:${Math.round(s.have/s.need*100)}%"></i></span>`}
-      ${on ? `<span class="eq">✓</span>` : ""}${isNew ? `<span class="new">NEW</span>` : ""}
-    </button>`;
-  }).join("");
+  if (!CATS.some(c => c[0] === lockerCat)) lockerCat = mySwole() ? "looks" : "sportswear";
+  let body;
+  if (lockerCat === "looks"){
+    const sw = mySwole(), cur = currentLook();
+    body = sw ? `<div class="llooks">${LOOKS[sw].map(l => { const have = lookProgress(l, st), all = have === l.items.length, on = cur === l;
+        return `<button class="llook ${all ? "" : "locked"} ${on ? "on" : ""}" data-look="${sw}|${l.n}">
+          <span class="llimg"><img src="${l.thumb}" alt="" loading="lazy"></span>
+          <b>${esc(l.name)}</b><small>${on ? "Wearing it" : all ? "Tap to wear" : `${have} / ${l.items.length} pieces`}</small>
+          <span class="prog"><i style="width:${Math.round(have / l.items.length * 100)}%"></i></span></button>`; }).join("")}</div>`
+      : `<div class="llooks none"><p>Signature looks belong to the nine Swoles. Pick one of them as your Swole and their two looks show up here.</p></div>`;
+  } else {
+    body = `<div class="lgrid">${ITEMS.filter(it => it.cat === lockerCat).map(it => {
+      const s = itemState(it, st), R = RARITY[it.rarity], on = isWorn(it.id, eq), isNew = s.open && it.unlock.type !== "start" && !seen.includes(it.id);
+      return `<button class="ltile ${s.open ? "" : "locked"} ${on ? "on" : ""}" style="--rc:${R.c}" data-item="${it.id}" aria-label="${esc(it.name)}${s.open ? "" : " (locked)"}">
+        ${itemImg(it)}
+        ${s.open ? "" : `<span class="lk"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span><span class="prog"><i style="width:${Math.round(s.have/s.need*100)}%"></i></span>`}
+        ${on ? `<span class="eq">✓</span>` : ""}${isNew ? `<span class="new">NEW</span>` : ""}
+      </button>`; }).join("")}</div>`;
+  }
   const owned = ITEMS.filter(i => itemState(i, st).open).length;
   return `
   <section class="locker">
     ${topBar(true, 0)}
     <div class="lhead"><span>${owned}/${ITEMS.length} unlocked</span></div>
     <div class="lcats">${CATS.map(c => `<button class="lcat" data-lcat="${c[0]}" aria-pressed="${lockerCat === c[0]}">${c[1]}</button>`).join("")}</div>
-    <div class="lgrid">${tiles}</div>
+    ${body}
     <div class="lfig">${outfitLook() ? `<img src="${outfitLook()}" alt="Swole">` : mediaTag(BUILTIN)}</div>
   </section>`;
 }
+function looksWith(id){ const sw = mySwole(); return sw ? LOOKS[sw].filter(l => l.items.includes(id)) : []; }
 function openItem(id){
   const it = ITEMS.find(i => i.id === id); if (!it) return;
-  const st = lockerStats(), s = itemState(it, st), R = RARITY[it.rarity], eqd = equipped();
-  const on = it.slot === "outfit" ? eqd.outfit === it.id : (eqd[it.slot] === it.id && !eqd.outfit);
+  const st = lockerStats(), s = itemState(it, st), R = RARITY[it.rarity], on = isWorn(id);
   const seen = LS.get("swole:lockerSeen", []); if (s.open && !seen.includes(id)){ LS.set("swole:lockerSeen", [...seen, id]); }
+  const canOff = on && !it.slots.every(x => SLOT_FIXED.includes(x)) ;
+  const lw = looksWith(id);
   openSheet(`
     <div class="close"><span class="eyebrow">Locker · ${esc(SLOTS[it.slot] || it.slot)}</span><button data-act="close">Close ✕</button></div>
     <div class="idet" style="--rc:${R.c}">
-      <div class="iart ${s.open ? "" : "locked"}">${it.img ? `<img src="${it.img}" alt="">` : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">${SLOT_ICON[it.slot] || SLOT_ICON.extra}</svg>`}</div>
+      <div class="iart ${s.open ? "" : "locked"}">${itemImg(it)}</div>
       <span class="rar">${R.label}</span>
       <h1 class="sh-title">${esc(it.name)}</h1>
       <p>${esc(it.desc || "")}</p>
       ${it.unlock.type === "start" ? "" : `<div class="ireq"><div><b>${esc(UNLOCK_TEXT[it.unlock.type](it.unlock.n))}</b><span>${s.have} / ${s.need}</span></div><span class="prog big"><i style="width:${Math.round(s.have/s.need*100)}%"></i></span></div>`}
       ${!s.open ? `<button class="pill wide" disabled>Locked</button>`
-        : it.slot === "outfit" && on ? `<button class="pill wide" data-unequip="outfit">Back to fight kit</button>`
-        : `<button class="pill wide" data-equip="${it.id}" ${on ? "disabled" : ""}>${on ? "Equipped" : "Equip"}</button>`}
-      ${s.open && !it.look ? `<p class="inote">${it.slot === "outfit" ? "Swole wears this outfit as soon as its render is in." : "Swole's figure shows this item once its render is made."}</p>` : ""}
+        : canOff ? `<button class="pill wide" data-unequip="${it.id}">Take it off</button>`
+        : `<button class="pill wide" data-equip="${it.id}" ${on ? "disabled" : ""}>${on ? "Wearing it" : "Wear it"}</button>`}
+      ${lw.length ? `<p class="inote">Part of ${esc(SWOLE_NAMES[mySwole()])}'s ${lw.map(l => `“${esc(l.name)}”`).join(" and ")} look.</p>` : ""}
     </div>`);
 }
-async function unequipOutfit(){
-  const L = {...lockerData()}; L.equipped = {...equipped()}; const was = L.equipped.outfit; delete L.equipped.outfit;
-  await save("settings", "locker", L); toast("Fight kit back on."); if (was) openItem(was);
+async function saveEquip(eq){ const L0 = {...lockerData()}; L0.equipped = eq; L0.v = 2; await save("settings", "locker", L0); }
+async function unequipOutfit(id){
+  const it = ITEMS.find(i => i.id === id); if (!it) return;
+  const eq = {...equipped()}; it.slots.forEach(sl => { if (eq[sl] === id) delete eq[sl]; });
+  await saveEquip(eq); toast(`${it.name} off.`); openItem(id);
+}
+function wearInto(eq, it){
+  Object.keys(eq).forEach(sl => { const cur = ITEMS.find(i => i.id === eq[sl]); if (cur && cur.slot === "set" && it.slots.some(x => cur.slots.includes(x))) cur.slots.forEach(x => delete eq[x]); });
+  it.slots.forEach(sl => { eq[sl] = it.id; });
+  SLOT_FIXED.forEach(sl => { if (!eq[sl]) eq[sl] = STARTER[sl]; });
+  return eq;
 }
 async function equipItem(id){
   const it = ITEMS.find(i => i.id === id); if (!it) return;
-  const L = {...lockerData()}; L.equipped = {...equipped(), [it.slot]: id};
-  if (it.slot !== "outfit") delete L.equipped.outfit;   // picking fight gear puts the fight kit back on
-  await save("settings", "locker", L);
-  toast(`${it.name} equipped.`);
+  const before = currentLook();
+  await saveEquip(wearInto({...equipped()}, it));
+  const now = currentLook();
+  toast(now && now !== before ? `${now.name}: full look on.` : `${it.name} on.`);
   openItem(id);
+}
+async function wearLook(key){
+  const [sw, n] = key.split("|"), l = (LOOKS[sw] || []).find(x => String(x.n) === n); if (!l) return;
+  const st = lockerStats(), miss = l.items.map(i => ITEMS.find(x => x.id === i)).filter(i => !itemState(i, st).open);
+  if (miss.length){ openLook(l, miss); return; }
+  let eq = {...equipped()}; ["outer","head","hands","acc"].forEach(sl => delete eq[sl]);
+  l.items.forEach(i => { eq = wearInto(eq, ITEMS.find(x => x.id === i)); });
+  await saveEquip(eq); toast(`${l.name}: full look on.`); render();
+}
+function openLook(l, miss){
+  const st = lockerStats();
+  openSheet(`
+    <div class="close"><span class="eyebrow">Look · ${esc(SWOLE_NAMES[l.sw])}</span><button data-act="close">Close ✕</button></div>
+    <div class="idet look">
+      <div class="iart"><img src="${l.thumb}" alt=""></div>
+      <h1 class="sh-title">${esc(l.name)}</h1>
+      <p>Own and wear every piece and ${esc(SWOLE_NAMES[l.sw])} changes into this look.</p>
+      <div class="lpieces">${l.items.map(i => { const it = ITEMS.find(x => x.id === i), s = itemState(it, st);
+        return `<button class="ltile ${s.open ? "" : "locked"}" style="--rc:${RARITY[it.rarity].c}" data-item="${it.id}">${itemImg(it)}</button>`; }).join("")}</div>
+      ${miss.map(it => { const s = itemState(it, st); return `<div class="ireq"><div><b>${esc(it.name)}</b><span>${esc(UNLOCK_TEXT[it.unlock.type](it.unlock.n))} · ${s.have} / ${s.need}</span></div></div>`; }).join("")}
+    </div>`);
 }
 function bindTilt(){
   const h = document.getElementById("hero"); if (!h) return;
@@ -626,7 +669,7 @@ async function openSettings(){
     </div>`}
 
     <div class="block">
-      <h3>App<small>v41 · PWA</small></h3>
+      <h3>App<small>v44 · PWA</small></h3>
       <p class="verdict-l" style="text-align:left;max-width:none;margin:6px 0 12px">${isStandalone() ? "Running from your Home Screen." : "Tip: Share → Add to Home Screen for full-screen and reminders."}<br><small style="opacity:.6">Screen ${(window.__vp||{}).screen} · view ${(window.__vp||{}).inner} · inset ${(window.__vp||{}).envB} · gap ${(window.__vp||{}).gap}</small></p>
     </div>`);
 }
@@ -892,7 +935,8 @@ document.addEventListener("click", async e => {
   else if (t.dataset.open){ const [k,id] = t.dataset.open.split("|"); openSession(k,id); }
   else if (t.dataset.item){ openItem(t.dataset.item); }
   else if (t.dataset.equip){ equipItem(t.dataset.equip); }
-  else if (t.dataset.unequip){ unequipOutfit(); }
+  else if (t.dataset.unequip){ unequipOutfit(t.dataset.unequip); }
+  else if (t.dataset.look){ wearLook(t.dataset.look); }
   else if (t.dataset.lcat){ lockerCat = t.dataset.lcat; render(); }
   else if (t.dataset.savetest){ saveTest(t.dataset.savetest); }
   else if (t.dataset.status){ document.querySelectorAll("#logStatus .opt").forEach(b => b.setAttribute("aria-pressed", b === t)); }

@@ -19,8 +19,8 @@ const OB_GOAL_SUGGEST = ["Do my first pull-up","Raise my VO2 max","Lose a few ki
 /* free-text goal → plan category (first match wins) */
 function goalCat(text){
   const t = " " + String(text || "").toLowerCase() + " ";
-  if (/fight|mma|muay|boxing|kickbox|bjj|jiu|sparr|ski|padel|tennis|football|soccer|fodbold|golf|climb|hockey|handball|season|match|tournament|game\b/.test(t)) return "sport";
-  if (/marathon|half|\b\d+ ?k\b|\bkm\b|\brun\b|running|\bjog|triathlon|ironman|race|cycl|\bbike|swim|stamina|endurance|rounds/.test(t)) return "endurance";
+  if (/fight|mma|muay|boxing|\bbox\b|boxer|kickbox|bjj|jiu|sparr|ski|padel|tennis|football|soccer|fodbold|golf|climb|hockey|handball|season|match|tournament|game\b/.test(t)) return "sport";
+  if (/marathon|half|\b\d+ ?k\b|\bkm\b|\brun\b|running|\bjog|triathlon|ironman|race|cycl|\bbike|swim|stamina|endurance|rounds|gas tank|cardio|conditioning/.test(t)) return "endurance";
   if (/split|toes|flexib|mobil|stretch|bridge|deep squat|yoga|hips/.test(t)) return "mobility";
   if (/pull-?up|chin-?up|push-?up|dip|deadlift|squat|bench|press|lift|muscle-?up|handstand|strong|strength/.test(t)) return "strength";
   if (/vo2|heart rate|resting|blood pressure|health|energy|sleep|fitter|in shape|back in shape|cholesterol|longevity/.test(t)) return "health";
@@ -32,6 +32,8 @@ function goalCat(text){
    when(A) hides a question that doesn't apply. Optional questions have skip:true. */
 const OB_LEVELS = ["New to training","Under 1 year","1–3 years","3+ years","I compete"];
 const obTrained = A => A.history && A.history !== "New to training" && !(A.types || []).includes("Nothing right now");
+/* v42: the four questions (goal, times a week, already set, what you want) come first on their own screens.
+   This short chat only asks what the plan can't guess: who you are, where you are now, and what keeps you safe. */
 const OB_Q = [
   {id:"name", q:"First things first. What should I call you?", type:"text", ph:"Your name"},
   {id:"age", q:"How old are you?", type:"number", unit:"years", min:14, max:90},
@@ -39,21 +41,18 @@ const OB_Q = [
   {id:"height", q:"How tall are you?", type:"number", unit:"cm", min:120, max:230, skip:true},
   {id:"weight", q:"And your weight? It stays private. Only you see it.", type:"number", unit:"kg", min:35, max:250, skip:true},
   {id:"history", q:"How long have you trained consistently?", type:"chips", options:OB_LEVELS},
-  {id:"types", q:"What do you train now? Pick all that fit.", type:"multi", options:["Weights","Running","Cycling or rowing","Combat sports","Team sports","Classes (HIIT, CrossFit)","Yoga or mobility","Nothing right now"], none:"Nothing right now", when:A => A.history !== "New to training"},
-  {id:"current", q:"In a normal week right now, how many sessions do you do? Count classes too.", type:"chips", options:["1–2","3–4","5–6","7–9","10+"], when:obTrained},
-  {id:"hard", q:"How many of those are hard? Near your limit, too out of breath to talk.", type:"chips", options:["0","1","2","3","4+"], when:obTrained},
-  {id:"numbers", q:"Any numbers you know? A run time, your best lifts, max pull-ups. Rough is fine.", type:"text", ph:"E.g. 5 km in 24 min, squat 100 kg × 5", skip:true, when:obTrained},
-  {id:"hr", q:"Do you know your heart-rate numbers? Resting, max or your zones.", type:"text", ph:"E.g. resting 58, max 190, zone 2 112–130", skip:true, when:obTrained},
-  {id:"watch", q:"Do you train with a watch?", type:"chips", options:["Garmin","Apple Watch","Other watch","No watch"]},
-  {id:"days", q:"How many days a week can you train?", type:"chips", options:["2","3","4","5","6"]},
+  {id:"numbers", q:"Where are you now? A number that fits your goal. Rough is fine.", type:"text", ph:"E.g. 5 km in 24 min", skip:true, when:A => A.history !== "New to training"},
   {id:"mins", q:"How long can a session be?", type:"chips", options:["20 min","30 min","45 min","60 min","90 min"]},
   {id:"where", q:"Where will you train? Pick all that fit.", type:"multi", options:["Gym","Home","Outdoors","Classes / club"]},
+  {id:"gym", q:"Which gym or club? Your crew and gym rewards hang on it.", type:"text", ph:"E.g. Nak Muay CPH", skip:true, when:A => (A.where || []).some(x => x === "Gym" || x === "Classes / club")},
   {id:"deadline", q:"When do you want to get there?", type:"chips", options:["No deadline","8 weeks","12 weeks","16 weeks","6 months"]},
-  {id:"likes", q:"Anything you love or hate in training? The plan will lean that way.", type:"text", ph:"E.g. love intervals, hate treadmills", skip:true},
   {id:"injury", q:"Anything that hurts or holds you back?", type:"multi", options:["Nothing","Knee","Back","Shoulder","Something else"], none:"Nothing"},
   {id:"health", q:"Last one, for safety. Does any of this apply to you?", type:"multi", options:["Heart or blood pressure issues","Dizziness or fainting","Pregnant","Surgery in the last 6 months","None of these"], none:"None of these"},
 ];
-const obShown = q => (!q.when || q.when(OB.a)) && !(q.id === "days" && OB && OB.mode === "own" && obOwnDays());
+/* "where are you now": the example fits the goal */
+const OB_NOW_PH = {strength:"E.g. 5 pull-ups, squat 80 kg × 5", endurance:"E.g. 5 km in 28 min, longest run 8 km", mobility:"E.g. hands 10 cm from the floor",
+  health:"E.g. resting heart rate 64, walk 30 min easily", body:"E.g. bench 60 kg × 8, 3 gym days now", sport:"E.g. 3 hard rounds before I fade, 5 km in 26 min"};
+const obShown = q => !q.when || q.when(OB.a);
 const OB_LIB = {
   strength:  {weeks:8,  phases:[["Foundation",2,"Learn the lifts, build the base"],["Build",3,"Add load every week"],["Deload",1,"Half volume, let it land"],["Peak",1,"Heavy and sharp"],["Test",1,"Show what you built"]], sess:["Strength A","Strength B","Skill practice","Conditioning","Mobility","Strength C"]},
   endurance: {weeks:10, phases:[["Base",3,"Easy miles, lots of zone 2"],["Build",3,"Intervals join the party"],["Deload",1,"Shorter and easier"],["Sharpen",2,"Race pace and speed"],["Test",1,"The big day"]], sess:["Easy session (zone 2)","Intervals","Long session","Strength for engines","Mobility","Tempo"]},
@@ -89,26 +88,28 @@ const OB_STYLES = [
 ];
 /* AV + avatar builder: see "Swole builder" below */
 let OB = null;
-const obInit = () => ({step:"welcome", email:"", a:{}, qi:0, goal:null, plan:null, av:AV_DEFAULT(), avTab:"body", drawn:false, avMode:null, photos:[], style:"anime", coach:null, fighter:null, fixed:[], gyms:[], goalText:""});
+const obInit = () => ({step:"welcome", email:"", a:{}, qi:0, goal:null, plan:null, av:AV_DEFAULT(), avTab:"body", drawn:false, avMode:null, photos:[], style:"anime", coach:null, fighter:null, fixed:[], gyms:[], goalText:"", times:null, setN:null, want:{picks:[], text:""}});
 
 function obPlan(){
   const g = OB.goal, A = OB.a, L = OB_LIB[g.cat];
   const newbie = A.history === "New to training";
-  const days = Number(A.days) || 3, mins = parseInt(A.mins) || 45;
+  const days = OB.times ? Math.max(1, Math.min(6, obFree() || 1)) : (Number(A.days) || 3), mins = parseInt(A.mins) || 45;
   const phases = L.phases.map(p => ({name:p[0], weeks:p[1], focus:p[2]}));
   if (newbie) phases[0].weeks += 2;
   else if (OB_LEVELS.indexOf(A.history) >= 3 && phases[0].weeks > 2) phases[0].weeks -= 1;   // trained people need less ramp-up
   const weeks = phases.reduce((s, p) => s + p.weeks, 0);
   const place = OB.fixed.length ? swolePlaceDays(days, OB.fixed) : {days: OB_DAYS[days] || OB_DAYS[3], capped:false};
   let red = 0; const redCap = Math.max(0, 2 - OB.fixed.reduce((n, f) => n + (f.hard ? f.days.length : 0), 0));
-  const week1 = place.days.map((d, i) => { let what = L.sess[i % L.sess.length]; if (/^(Intervals|Tempo|Sport conditioning)$/.test(what)){ if (red >= redCap) what = L.sess[0]; else red++; } return {d, day:DAY[d], what}; });
+  const wanted = typeof obWantSessions === "function" ? obWantSessions() : [];
+  const week1 = place.days.map((d, i) => { if (i < wanted.length) return {d, day:DAY[d], what:wanted[i]}; let what = L.sess[(i - wanted.length) % L.sess.length]; if (/^(Intervals|Tempo|Sport conditioning)$/.test(what)){ if (red >= redCap) what = L.sess[0]; else red++; } return {d, day:DAY[d], what}; });
   OB.fixed.forEach(f => f.days.forEach(d => week1.push({d, day:DAY[d], what:f.label + (f.when ? " · " + f.when.toLowerCase() : ""), fixed:true})));
   week1.sort((a, b) => a.d - b.d || (a.fixed ? 1 : -1));
   const inj = (A.injury || []).filter(x => x !== "Nothing");
   const notes = [];
   if (newbie) notes.push("We start gentle: two extra weeks of foundation.");
   if (inj.length) notes.push(`We'll go easy on your ${inj.join(" and ").toLowerCase()} and build it up carefully.`);
-  if (OB.fixed.length) notes.push("Your own sessions are in the week. Swole's sessions go on the other days.");
+  if (OB.fixed.length) notes.push("Your set sessions stay where they are. Swole's sessions go around them.");
+  if (wanted.length > place.days.length) notes.unshift(`You asked for ${wanted.length} sessions and there were ${place.days.length} free days, so the first ${place.days.length} are in.`);
   if (OB.fixed.some(f => f.hard)) notes.push("Your hard classes count as hard days, so there are fewer intervals in the plan.");
   if (place.capped) notes.push(`We kept one day a week fully free, so that's ${place.days.length} Swole session${place.days.length === 1 ? "" : "s"} a week.`);
   const flag = (A.health || []).some(x => x !== "None of these");
@@ -132,7 +133,8 @@ function obBuildSteps(){
   const st = OB_STAGES[OB.bstage || "writing"] ?? 0;
   const mine = [
     {t: `Your goal: ${OB.goal ? OB.goal.label : ""}`, done: true},
-    {t: `Your week: ${fx}${A.days || "?"} days for Swole, up to ${parseInt(A.mins) || 45} min`, done: true},
+    {t: OB.times ? `Your week: ${OB.times} sessions${obSetCount() ? `, ${obSetCount()} already set` : ""}, ${obFree()} for Swole` : `Your week: ${fx}${A.days || "?"} days for Swole, up to ${parseInt(A.mins) || 45} min`, done: true},
+    ...(obWant().picks.length || obWant().text ? [{t: `In your Path: ${obWant().picks.length ? obWant().picks.join(", ") : "your own program"}`, done: true}] : []),
     {t: A.history && A.history !== "New to training" ? `Your level: ${A.history.toLowerCase()} of training${A.current ? `, ${A.current} sessions a week now` : ""}` : "Your level: starting fresh, so we start gentle", done: true},
   ];
   const ours = [
@@ -140,14 +142,16 @@ function obBuildSteps(){
     {t: OB.bstage === "fixing" ? "Fixing what the safety check found" : "Checking the safety rules", done: st > 1, now: st === 1},
     {t: "Your plan", done: false, now: st === 2},
   ];
-  return {n, steps: [...mine, ...ours], pct: Math.round(([...mine, ...ours].filter(x => x.done).length + (st < 2 ? .5 : 1)) / 6 * 100)};
+  return {n, steps: [...mine, ...ours], pct: Math.round(([...mine, ...ours].filter(x => x.done).length + (st < 2 ? .5 : 1)) / (mine.length + 3) * 100)};
 }
 const PLAN_FN = typeof SB_URL !== "undefined" ? SB_URL + "/functions/v1/build-plan" : "";
 function obIntake(){
   const A = {...OB.a}; delete A.name;
-  const own = OB.mode === "own" ? {methods: obOwn().methods.slice(), week: obOwn().week.slice(), text: (obOwn().text || "").slice(0, 3000)} : null;
+  /* v42: B = sessions a week in total (incl. the set ones), free slots = B − C go to Swole */
+  if (OB.times){ A.days = String(Math.max(1, Math.min(7, obFree() || 1))); A.current = obRange(OB.times); }
+  const W = obWant(), wants = W.picks.length || W.text ? {methods: W.picks.slice(), week: [], text: (W.text || "").slice(0, 3000)} : null;
   return {goal: OB.goal, answers: A, fixed: OB.fixed.map(({label, days, when, hard}) => ({label, days, when, hard})), gyms: OB.gyms.slice(), start: obStartDate(), rebuild: !!OB.rebuild,
-    mode: OB.mode || "new", own, feedback: OB.feedback || "", previous: OB.prevBrief || ""};
+    mode: wants ? "wants" : "new", own: wants, times: OB.times || null, setCount: obSetCount(), feedback: OB.feedback || "", previous: OB.prevBrief || ""};
 }
 async function planCall(body){
   const t = await sbToken(); if (!t) throw new Error("Not logged in");
@@ -205,41 +209,49 @@ async function obBuild(){
   if (OB.step === "building"){ obRender(); await wait(500); OB.step = "plan"; obRender(); }
 }
 
-/* ---------- v41: "Do you already have a path?" ----------
-   new   = No, build one for me      → the AI builds it (as before), with "Change something" on the plan screen
-   own   = Yes, I have my own        → methods you trust + your week laid out (or pasted) → the AI follows it
-   coach = My coach has one          → find a coach (coaches publishing their own programs comes later) */
-const OB_PATHS = [
-  {id:"new",   t:"No, build one for me", s:"Answer a few questions. Your coach builds it."},
-  {id:"own",   t:"Yes, I have my own", s:"A program or a method you trust. We fit it to your week."},
-  {id:"coach", t:"My coach has one", s:"Find your coach on Swole."},
-];
-const OB_METHODS = {
-  strength:  ["Push / pull / legs","Upper / lower","Full body 3× a week","5×5","5/3/1","Grease the groove"],
-  body:      ["Push / pull / legs","Upper / lower","Bro split","Full body 3× a week","Arnold split","Zone 2"],
-  endurance: ["Norwegian 4×4","Zone 2","80/20 polarised","Long run on weekends","Tempo runs","Hill repeats"],
-  health:    ["Zone 2","Norwegian 4×4","Strength 2× a week","80/20 polarised","10,000 steps","Daily mobility"],
-  sport:     ["Norwegian 4×4","Rounds on the bag","Sprint intervals","Strength 2× a week","Plyometrics","Zone 2"],
-  mobility:  ["Daily mobility","Loaded stretching","Yoga","Pilates","Strength through range","Zone 2"],
+/* ---------- v42: four questions to a Path ----------
+   A  What do you want to achieve?            (goal)
+   B  How many times a week do you train?      (times)
+   C  How many of those are already set?       (set: count + one row per set session)
+   D  Anything you want in your Path?          (want: methods you trust, your own words, or "No, Swole decides")
+   Free slots = B − C. Swole puts the member's D picks in the free slots first, then fills the rest for the goal.
+   Someone with no idea taps "No, Swole decides" and gets a full program. */
+const OB_TIMES = [1,2,3,4,5,6,7,8,9,10];
+/* what each method needs per week (sessions) and what those sessions are called; n:0 = a daily add-on, no slot */
+const OB_WANT = {
+  "Long slow runs":{n:1, s:["Long slow run"]}, "Norwegian 4×4":{n:1, s:["Norwegian 4×4"]}, "Push, pull, legs":{n:3, s:["Push","Pull","Legs"]},
+  "Upper, lower":{n:2, s:["Upper body","Lower body"]}, "Full body 3× a week":{n:3, s:["Full body"]}, "Bro split":{n:5, s:["Chest","Back","Shoulders","Arms","Legs"]},
+  "5×5":{n:3, s:["5×5 A","5×5 B"]}, "5/3/1":{n:4, s:["5/3/1 squat","5/3/1 bench","5/3/1 deadlift","5/3/1 press"]}, "Grease the groove":{n:0, s:[]},
+  "Zone 2":{n:2, s:["Zone 2"]}, "80/20 easy and hard":{n:3, s:["Easy run","Hard intervals"]}, "Tempo runs":{n:1, s:["Tempo run"]}, "Hill repeats":{n:1, s:["Hill repeats"]},
+  "Strength 2× a week":{n:2, s:["Strength"]}, "Rounds on the bag":{n:1, s:["Bag rounds"]}, "Sprint intervals":{n:1, s:["Sprints"]}, "Plyometrics":{n:1, s:["Jumps and throws"]},
+  "Daily mobility":{n:0, s:[]}, "Loaded stretching":{n:2, s:["Loaded stretching"]}, "Yoga":{n:1, s:["Yoga"]}, "Pilates":{n:1, s:["Pilates"]},
+  "10,000 steps":{n:0, s:[]}, "Swimming":{n:1, s:["Swim"]}, "Kettlebells":{n:2, s:["Kettlebells"]},
 };
-/* the sessions each method gives you to place on a day */
-const OB_METHOD_DAYS = {"Push / pull / legs":["Push","Pull","Legs"], "Upper / lower":["Upper","Lower"], "Full body 3× a week":["Full body"], "5×5":["5×5 A","5×5 B"],
-  "5/3/1":["5/3/1 squat","5/3/1 bench","5/3/1 deadlift","5/3/1 press"], "Bro split":["Chest","Back","Shoulders","Arms","Legs"], "Arnold split":["Chest + back","Shoulders + arms","Legs"],
-  "80/20 polarised":["Easy run","Hard intervals"], "Long run on weekends":["Long run"], "Tempo runs":["Tempo run"], "Rounds on the bag":["Bag rounds"], "Sprint intervals":["Sprints"],
-  "Strength 2× a week":["Strength"], "Plyometrics":["Jumps and throws"], "10,000 steps":["Long walk"]};
-const OB_AUTO = "Swole decides";
-function obOwn(){ if (!OB.own) OB.own = {methods: [], week: ["","","","","","",""], text: ""}; return OB.own; }
-function obDayOptions(){
-  const o = obOwn(), opts = [];
-  o.methods.forEach(m => (OB_METHOD_DAYS[m] || [m]).forEach(x => { if (!opts.includes(x)) opts.push(x); }));
-  return [...opts, OB_AUTO, "Rest"];
+const OB_WANTS = {
+  strength:  ["Push, pull, legs","Upper, lower","Full body 3× a week","5×5","5/3/1","Grease the groove"],
+  body:      ["Push, pull, legs","Bro split","Upper, lower","Full body 3× a week","Zone 2","Kettlebells"],
+  endurance: ["Long slow runs","Norwegian 4×4","80/20 easy and hard","Tempo runs","Hill repeats","Strength 2× a week"],
+  health:    ["Zone 2","Norwegian 4×4","Strength 2× a week","Long slow runs","10,000 steps","Daily mobility"],
+  sport:     ["Norwegian 4×4","Push, pull, legs","Long slow runs","Rounds on the bag","Sprint intervals","Plyometrics"],
+  mobility:  ["Daily mobility","Loaded stretching","Yoga","Pilates","Strength 2× a week","Zone 2"],
+};
+const obWant = () => { if (!OB.want) OB.want = {picks: [], text: ""}; return OB.want; };
+const obSetCount = () => OB.fixed.reduce((n, f) => n + f.days.length, 0);
+const obFree = () => Math.max(0, (OB.times || 0) - obSetCount());
+const obNeed = () => obWant().picks.reduce((n, m) => n + (OB_WANT[m] ? OB_WANT[m].n : 1), 0);
+/* the sessions the member asked for, in the order they go in the free slots (used by the fallback plan) */
+function obWantSessions(){
+  const out = [];
+  obWant().picks.forEach(m => { const w = OB_WANT[m] || {n:1, s:[m]}; for (let i = 0; i < w.n; i++) out.push(w.s[i % w.s.length] || m); });
+  return out;
 }
-const obOwnDays = () => obOwn().week.filter(x => x && x !== "Rest").length;
+/* sessions a week now → the ranges the plan builder knows */
+const obRange = n => n <= 2 ? "1–2" : n <= 4 ? "3–4" : n <= 6 ? "5–6" : n <= 9 ? "7–9" : "10+";
 
 /* ---------- roster ---------- */
 const ROSTER = [
   {id:"swole", img:"media/cut-default.webp"},   // the original Swole art
-  ...["ayo","mei","rafa","dev","freja","malik","nadia","sw8","sw9"].map(id => ({id, img:`media/roster/${id}/default.webp`})),   // ids are internal file keys only; Swoles have no names
+  ...["ghost","monday","morrow","price","later","twoday","snooze","glory","jan"].map(id => ({id, img:`media/roster/${id}/default.webp`, name: SWOLE_NAMES[id]})),   // v43: the nine v2 Swoles (old roster files stay for existing members)
 ];
 /* ---------- Swole builder (v25) ----------
    The member picks traits; the preview below is a quick sketch only.
@@ -386,7 +398,7 @@ function avatarSketchOld(v, size){
 }
 
 /* ---------- render ---------- */
-const OB_ORDER = ["welcome","email","code","consent","goal","haspath","findcoach","fixed","gyms","groundwork","intake","building","plan","swole","coach","invite","done"];
+const OB_ORDER = ["welcome","email","code","consent","goal","times","set","want","intake","building","plan","swole","coach","invite","done"];
 function obRender(){
   let el = document.getElementById("onb");
   if (!el){ el = document.createElement("div"); el.id = "onb"; document.body.appendChild(el); }
@@ -445,63 +457,46 @@ function obView(st){
         <button class="pill wide" data-ob="goalgo">Continue</button>
       </div>
     </div>`;
-  if (st === "haspath") return `
+  /* v42 B: how many times a week, everything counted */
+  if (st === "times") return `
     <div class="obq">
-      <h2 class="obqh">Do you already have a path?</h2>
-      <p class="obp obqp">Your path is your plan: what you train, when, and how it builds.</p>
-      <div class="obpaths">${OB_PATHS.map(o => `<button class="obpathopt ${OB.mode === o.id ? "on" : ""}" data-ob="hp:${o.id}"><b>${esc(o.t)}</b><span>${esc(o.s)}</span><i>›</i></button>`).join("")}</div>
+      <h2 class="obqh">How many times a week do you train?</h2>
+      <p class="obp obqp">Count everything: classes, gym, runs. Two sessions on one day count as two.</p>
+      <div class="obnums">${OB_TIMES.map(n => `<button class="obnum ${OB.times === n ? "on" : ""}" data-ob="times:${n}" aria-pressed="${OB.times === n}">${n}</button>`).join("")}</div>
+      <div class="obqfoot"><button class="oblink" data-ob="times:unsure">Not sure. Suggest something</button></div>
     </div>`;
-  if (st === "findcoach"){
-    const q = (OB.coachQ || "").toLowerCase();
-    const list = Object.keys(CAST).filter(id => CAST[id].role === "trainer" && (!q || (CAST[id].name + " " + CAST[id].sport + " " + CAST[id].handle).toLowerCase().includes(q)));
-    return `<div class="obq obfc-wrap">
-      <h2 class="obqh">Find your coach</h2>
-      <div class="obin"><input class="obinput obpill" id="obCoachQ" placeholder="Name or @handle" value="${esc(OB.coachQ || "")}" autocomplete="off" enterkeyhint="search"><button class="obsend" data-ob="coachq" aria-label="Search">→</button></div>
-      <div class="obfound">${list.length ? list.slice(0, 4).map(id => `<button class="obfc ${OB.coach === id ? "on" : ""}" data-ob="fc:${id}"><img src="${castImg(id)}" alt="" onerror="this.style.visibility='hidden'"><span><b>${esc(CAST[id].name)}</b><small>${esc(CAST[id].sport)}</small></span></button>`).join("") : `<p class="obnote">No coach by that name on Swole yet.</p>`}</div>
-      <div class="obcard obsoon"><b>Coach not on Swole yet?</b><p>Soon coaches can bring their own programs here. Tell us who yours is and we'll let you know when they join.</p>
-        <input class="obinput sm" id="obWantCoach" placeholder="Your coach's name or Instagram" value="${esc(OB.wantCoach || "")}"></div>
-      <div class="obqfoot"><button class="pill wide" data-ob="fcgo">${OB.coach ? `Train with ${esc(CAST[OB.coach].name)}` : "Build a plan for me meanwhile"}</button></div>
-    </div>`;
-  }
-  if (st === "groundwork"){
-    const o = obOwn(), cat = OB.goal ? OB_CAT(OB.goal.cat) : "health";
-    const methods = [...new Set([...OB_METHODS[cat], ...o.methods])];
-    const fx = d => OB.fixed.filter(f => f.days.includes(d)).map(f => f.label).join(" + ");
-    return `<div class="obq obgw">
-      <h2 class="obqh sm">Lay out your groundwork</h2>
-      <p class="obp obqp">Pick what you believe in and place it on your week. Swole fills in the details and keeps it safe.</p>
-      <p class="obeye">Methods you trust</p>
-      <div class="obchips">${methods.map(m => `<button class="obchip ${o.methods.includes(m) ? "on" : ""}" data-ob="gm:${esc(m)}">${esc(m)}</button>`).join("")}${OB.gmAdding ? `<span class="obin sm"><input class="obinput sm" id="obMethod" placeholder="E.g. Hyrox, Starting Strength" enterkeyhint="done"><button class="obsend" data-ob="gmsave" aria-label="Add">+</button></span>` : `<button class="obchip add" data-ob="gmadd">+ Your own</button>`}</div>
-      <p class="obeye">Your week</p>
-      <div class="obweekgw">${DAY.map((dn, d) => `<div class="obgwrow ${OB.gwOpen === d ? "open" : ""}">
-        <button class="obgwday" data-ob="gwd:${d}"><i>${dn}</i><span class="${o.week[d] ? "" : "mut"}">${esc(o.week[d] || "Nothing planned")}</span>${fx(d) ? `<small>+ ${esc(fx(d))}</small>` : ""}</button>
-        ${OB.gwOpen === d ? `<div class="obchips sm">${obDayOptions().map(x => `<button class="obchip ${o.week[d] === x ? "on" : ""}" data-ob="gws:${d}:${esc(x)}">${esc(x)}</button>`).join("")}${OB.gwCustom === d ? `<span class="obin sm"><input class="obinput sm" id="obDayText" placeholder="E.g. Bench + rows" value="${esc(o.week[d] && !obDayOptions().includes(o.week[d]) ? o.week[d] : "")}" enterkeyhint="done"><button class="obsend" data-ob="gwcsave:${d}" aria-label="Save">✓</button></span>` : `<button class="obchip add" data-ob="gwc:${d}">Write my own…</button>`}${o.week[d] ? `<button class="obchip" data-ob="gws:${d}:">Clear</button>` : ""}</div>` : ""}
-      </div>`).join("")}</div>
-      <details class="obpaste" ${o.text ? "open" : ""}><summary>Or paste your program</summary><textarea id="obOwnText" placeholder="E.g. Mon: bench 5×5, rows 4×8 · Wed: Norwegian 4×4 on the bike · …">${esc(o.text)}</textarea></details>
-      <div class="obqfoot"><button class="pill wide" data-ob="gwgo" ${o.methods.length || obOwnDays() || o.text ? "" : "disabled"}>Continue</button></div>
-    </div>`;
-  }
-  if (st === "fixed") return `
-    <div class="obq">
-      <h2 class="obqh">What are your weekly obligations?</h2>
-      <p class="obp obqp">Team classes and other fixed sessions. Your plan works around them.</p>
-      <div class="obqin"><div class="obin"><input class="obinput obpill" id="obFixed" placeholder="Every Tuesday I …" autocomplete="off" enterkeyhint="done"><button class="obsend" data-ob="fxadd" aria-label="Add">+</button></div>
+  /* v42 C: how many of those are already set; one row per set session */
+  if (st === "set"){
+    const n = OB.setN, added = obSetCount(), max = OB.times || 10;
+    return `<div class="obq">
+      <h2 class="obqh">How many of those are already set?</h2>
+      <p class="obp obqp">Team classes, a run club, sessions with a trainer. They stay put, and Swole plans around them.</p>
+      <div class="obnums">${Array.from({length: max + 1}, (_, i) => `<button class="obnum ${n === i ? "on" : ""}" data-ob="setn:${i}" aria-pressed="${n === i}">${i}</button>`).join("")}</div>
+      ${n ? `<div class="obqin"><div class="obin"><input class="obinput obpill" id="obFixed" placeholder="E.g. Muay Thai Mon–Thu 18:00" autocomplete="off" enterkeyhint="done"><button class="obsend" data-ob="fxadd" aria-label="Add">+</button></div>
         <div class="oblist">${OB.fixed.map((f, i) => `<div class="obitem"><button class="obx" data-ob="fxdel:${i}" aria-label="Remove ${esc(f.label)}">×</button><span class="obchip on-soft">${esc(f.label)} · ${esc(fixedDaysLabel(f.days))}${f.when ? " " + esc(f.when.toLowerCase()) : ""}</span></div>`).join("")}</div>
-        ${OB.fixed.length ? "" : `<p class="obnote">E.g. “Pilates every Friday morning” or “Boxing Mondays and Thursdays at 18”.</p>`}</div>
-      <div class="obqfoot"><button class="pill wide" data-ob="go:gyms">${OB.fixed.length ? "Continue" : "Nothing fixed"}</button></div>
+        <p class="obnote">${added ? `${added} of ${n} added.` : "What, which days and when. One line can cover several days."}</p></div>` : ""}
+      <div class="obqfoot"><button class="pill wide" data-ob="setgo" ${n == null ? "disabled" : ""}>Continue</button></div>
     </div>`;
-  if (st === "gyms") return `
-    <div class="obq">
-      <h2 class="obqh">What gym do you use?</h2>
-      <p class="obp obqp">Add every place you train. Gyms, studios, clubs.</p>
-      <div class="obqin"><div class="obin"><input class="obinput obpill" id="obGym" placeholder="I frequent …" autocomplete="off" enterkeyhint="done"><button class="obsend" data-ob="gymadd" aria-label="Add">+</button></div>
-        <div class="oblist">${OB.gyms.map((g, i) => `<div class="obitem"><button class="obx" data-ob="gymdel:${i}" aria-label="Remove ${esc(g)}">×</button><span class="obchip on-soft">${esc(g)}</span></div>`).join("")}</div></div>
-      <div class="obqfoot"><button class="pill wide" data-ob="go:${OB.mode === "own" ? "groundwork" : "intake"}">${OB.gyms.length ? "Continue" : "I don't use a gym"}</button></div>
+  }
+  /* v42 D: anything you want in your Path; the one filled button is "No, Swole decides" until they pick something */
+  if (st === "want"){
+    const W = obWant(), cat = OB.goal ? OB_CAT(OB.goal.cat) : "health";
+    const opts = [...new Set([...OB_WANTS[cat], ...W.picks])], free = obFree(), need = obNeed();
+    const over = W.picks.length && need > free;
+    const any = W.picks.length || (W.text || "").trim();
+    return `<div class="obq obwant">
+      <h2 class="obqh">Anything you want in your Path?</h2>
+      <p class="obp obqp">A method you trust, a session you love. Swole builds the rest around it.</p>
+      <div class="obchips">${opts.map(m => `<button class="obchip ${W.picks.includes(m) ? "on" : ""}" data-ob="wm:${esc(m)}" aria-pressed="${W.picks.includes(m)}">${esc(m)}</button>`).join("")}${OB.wmAdding ? `<span class="obin sm"><input class="obinput sm" id="obMethod" placeholder="E.g. Hyrox, swimming" enterkeyhint="done"><button class="obsend" data-ob="wmsave" aria-label="Add">+</button></span>` : `<button class="obchip add" data-ob="wmadd">+ Your own</button>`}</div>
+      <p class="obnote">${over ? `That's about ${need} sessions and you have ${free} free. Swole will suggest a fit on your plan.` : W.picks.length && need ? `Your picks use ${need} of your ${free} free slot${free === 1 ? "" : "s"}.${need < free ? " Swole fills the rest." : ""}` : `${free} free slot${free === 1 ? "" : "s"} a week for Swole.`}</p>
+      <details class="obpaste" ${W.text ? "open" : ""}><summary>Or paste a program</summary><textarea id="obWantText" placeholder="E.g. Mon: bench 5×5, rows 4×8 · Fri: Norwegian 4×4 on the bike">${esc(W.text || "")}</textarea></details>
+      <div class="obqfoot"><button class="pill wide" data-ob="wantgo">${any ? "Continue" : "No, Swole decides"}</button></div>
     </div>`;
+  }
   if (st === "intake"){
     const log = OB_Q.slice(0, OB.qi).filter(obShown).map(obQ).map(q => `<div class="obmsg c">${esc(q.q.replace("{name}", name))}</div><div class="obmsg u">${esc(obAns(q))}</div>`).join("");
     const q = obQ(OB_Q[OB.qi]);
-    const intro = `<div class="obmsg c">${esc(OB.goal.label)}. Got it. A few questions so the plan fits where you are now, not where a beginner starts.</div>`;
+    const intro = `<div class="obmsg c">${esc(OB.goal.label)}, ${OB.times || "a few"} times a week. Got it. A few quick ones about you, so the plan starts where you are now.</div>`;
     let input = "";
     if (q.type === "text") input = `<div class="obin"><input class="obinput sm" id="obA" placeholder="${esc(q.ph)}" autocapitalize="${q.id === "name" ? "words" : "sentences"}"><button class="obsend" data-ob="ans">→</button></div>${q.skip ? `<button class="oblink" data-ob="skipq">Skip</button>` : ""}`;
     if (q.type === "number") input = `<div class="obin"><input class="obinput sm" id="obA" type="number" inputmode="decimal" min="${q.min}" max="${q.max}" placeholder="${esc(q.unit)}"><button class="obsend" data-ob="ans">→</button></div>${q.skip ? `<button class="oblink" data-ob="skipq">Skip</button>` : ""}`;
@@ -525,7 +520,7 @@ function obView(st){
   if (st === "plan"){
     const P = OB.plan, easy = p => /deload|easy/i.test(p.type || p.name);
     const loaded = P.phases.filter(p => !easy(p));
-    const why = [P.summary || "", P.ai && OB.mode === "own" && P.notes.length ? P.notes.join(" ") : ""].filter(Boolean).join(" ");
+    const why = [P.summary || "", P.ai && (OB.mode === "own" || obWant().picks.length || obWant().text) && P.notes.length ? P.notes.join(" ") : ""].filter(Boolean).join(" ");
     return `<div class="obplan v40"><p class="obeye">Your plan${name ? `, ${name}` : ""}</p><h2 class="obbig sm">${esc(P.title)}</h2>
       <div class="obstats sm"><div><b>${P.weeks}</b><span>weeks</span></div><div><b>${P.days}×</b><span>a week</span></div><div><b>${P.mins}</b><span>min each</span></div></div>
       ${P.flag ? `<div class="obwarn"><b>Talk to a doctor first.</b> You ticked something on the safety list. Get a green light before you start.</div>` : ""}
@@ -542,7 +537,7 @@ function obView(st){
     const F = OB.fighter && ROSTER.find(f => f.id === OB.fighter);
     return `
     <h2 class="obh">Pick your Swole</h2><p class="obp">Pick the one that feels most like you.</p>
-    <div class="obroster">${ROSTER.map((f, i) => `<button class="obfighter ${OB.fighter === f.id ? "on" : ""}" data-ob="fighter:${f.id}" aria-pressed="${OB.fighter === f.id}" aria-label="Swole ${i + 1}"><img src="${f.img}" alt=""></button>`).join("")}</div>
+    <div class="obroster">${ROSTER.map((f, i) => `<button class="obfighter ${OB.fighter === f.id ? "on" : ""}" data-ob="fighter:${f.id}" aria-pressed="${OB.fighter === f.id}" aria-label="${f.name || "Swole " + (i + 1)}"><img src="${f.img}" alt="">${f.name ? `<span class="obfname">${f.name}</span>` : ""}</button>`).join("")}</div>
     <button class="pill wide" data-ob="go:coach" ${F ? "" : "disabled"}>${F ? "This is my Swole" : "Pick a Swole"}</button>
     ${OB_DEMO ? `<button class="oblink" data-ob="go:swole:photo">Make my Swole from photos</button>` : ""}
     <button class="oblink" data-ob="go:swole:build">Build my Swole</button>`;
@@ -609,7 +604,7 @@ function obView(st){
   return "";
 }
 function obQ(q){
-  if (q.id === "days" && OB.fixed && OB.fixed.length) return {...q, q:"Besides your fixed sessions, how many days a week can you train with Swole?", options:["1","2","3","4","5","6"]};
+  if (q.id === "numbers") return {...q, ph: OB_NOW_PH[OB.goal ? OB_CAT(OB.goal.cat) : "health"] || q.ph};
   return q;
 }
 function obAns(q){ const v = OB.a[q.id]; if (v == null || v === "") return "Skipped"; return Array.isArray(v) ? v.join(", ") : q.unit ? `${v} ${q.unit}` : String(v); }
@@ -632,14 +627,19 @@ function obBack(){
   const s = OB.step;
   if (s === "intake"){ let i = OB.qi - 1; while (i >= 0 && !obShown(OB_Q[i])) i--; if (i >= 0){ OB.qi = i; obRender(); return; } }
   if (OB.rebuild && s === "goal") return obCancelRebuild();
-  const prev = {email:"welcome", code:"email", consent:"code", goal:"consent", haspath:"goal", findcoach:"haspath", fixed: OB.mode === "coach" ? "findcoach" : "haspath", gyms:"fixed", groundwork:"gyms", intake: OB.mode === "own" ? "groundwork" : "gyms", plan:"intake", swole:"plan", "swole:photo":"swole", "swole:build":"swole", "swole:drawing":"swole:build", coach: OB.rebuild ? "plan" : "swole", invite:"coach", done: OB.rebuild ? "coach" : "invite"}[s];
+  const prev = {email:"welcome", code:"email", consent:"code", goal:"consent", times:"goal", set:"times", want:"set", intake:"want", plan:"intake", swole:"plan", "swole:photo":"swole", "swole:build":"swole", "swole:drawing":"swole:build", coach: OB.rebuild ? "plan" : "swole", invite:"coach", done: OB.rebuild ? "coach" : "invite"}[s];
   if (!OB_DEMO && SB.session && (prev === "code" || prev === "email")) return;
   if (prev){ if (prev === "intake"){ let i = OB_Q.length - 1; while (i > 0 && !obShown(OB_Q[i])) i--; OB.qi = i; } obGo(prev); }
 }
+/* the chat starts at its first question; a rebuild skips the personal basics */
+function obToIntake(){
+  OB.qi = 0; if (OB.rebuild){ while (OB.qi < OB_Q.length - 1 && (OB_Q[OB.qi].id in OB.a) && ["name","age","sex","height","weight"].includes(OB_Q[OB.qi].id)) OB.qi++; }
+  while (OB.qi < OB_Q.length && !obShown(OB_Q[OB.qi])) OB.qi++;
+}
 function obNextQ(){ OB.qi++; while (OB.qi < OB_Q.length && !obShown(OB_Q[OB.qi])) OB.qi++; if (OB.qi >= OB_Q.length){ OB.building = false; OB.plan = null; OB.job = null; OB.bstage = null; obGo("building"); } else obRender(); }
 function obFinish(ff){
-  const P = {name: OB.a.name || "", email: OB.email, goal: OB.goal, program: OB.plan.title, coach: OB.coach || obCoachOrder()[0].id, answers: OB.a, plan: OB.plan, avatar: OB.avMode === "build" ? OB.av : null, avatarPrompt: OB.avMode === "build" ? swolePrompt(OB.av) : null, avatarStatus: OB.avMode === "build" ? "drawing" : null, style: OB.avMode === "photo" ? OB.style : null, fighter: (OB.avMode === "fighter" || OB.avMode === "build") ? OB.fighter : null, fixed: OB.fixed.map(({label, days, when, hard, text}) => ({label, days, when, hard, text})), gyms: OB.gyms.slice(),
-    mode: OB.mode || "new", own: OB.mode === "own" ? obOwn() : null, wantCoach: OB.wantCoach || null};
+  const P = {name: OB.a.name || "", email: OB.email, goal: OB.goal, program: OB.plan.title, coach: OB.coach || obCoachOrder()[0].id, answers: OB.a, plan: OB.plan, avatar: OB.avMode === "build" ? OB.av : null, avatarPrompt: OB.avMode === "build" ? swolePrompt(OB.av) : null, avatarStatus: OB.avMode === "build" ? "drawing" : null, style: OB.avMode === "photo" ? OB.style : null, fighter: (OB.avMode === "fighter" || OB.avMode === "build") ? OB.fighter : null, fixed: OB.fixed.map(({label, days, when, hard, text}) => ({label, days, when, hard, text})), gyms: OB.a.gym ? [OB.a.gym] : OB.gyms.slice(),
+    mode: obWant().picks.length || obWant().text ? "wants" : "new", own: null, want: obWant(), times: OB.times || null, setN: OB.setN ?? null};
   if (OB.rebuild){   // keep the member's Swole, avatar and history; swap the goal, answers and plan
     const old = OB.rebuild;
     Object.assign(P, {avatar: old.avatar, avatarPrompt: old.avatarPrompt, avatarStatus: old.avatarStatus, avatarArt: old.avatarArt, avatarDrawId: old.avatarDrawId, style: old.style, fighter: old.fighter, createdAt: old.createdAt, rebuiltAt: new Date().toISOString(), previousPlans: [...(old.previousPlans || []), {program: old.program, goal: old.goal, start: old.start, endedAt: new Date().toISOString()}].slice(-5)});
@@ -668,19 +668,11 @@ document.addEventListener("click", async e => {
   const b = e.target.closest("#onb [data-ob]"); if (!b) return;
   const a = b.dataset.ob;
   if (a === "back") return obBack();
-  if (a === "go:gyms"){   // text typed but not added yet: add it on the way out
-    const i = document.getElementById("obFixed");
-    if (i && i.value.trim()){ const f = parseFixed(i.value); if (f && f.error === "day"){ toast("Which day? E.g. “Pilates every Friday morning”."); return; } if (f) OB.fixed.push(f); }
-  }
-  if (a === "go:groundwork"){
-    const i = document.getElementById("obGym");
-    if (i && i.value.trim()){ const v = i.value.trim().replace(/^i (frequent|go to|use|train at)\s+/i, ""); OB.gyms.push(v.charAt(0).toUpperCase() + v.slice(1)); }
-  }
-  if (a === "go:intake"){
-    const i = document.getElementById("obGym");
-    if (i && i.value.trim()){ const v = i.value.trim().replace(/^i (frequent|go to|use|train at)\s+/i, ""); OB.gyms.push(v.charAt(0).toUpperCase() + v.slice(1)); }
-    OB.qi = 0; if (OB.rebuild){ while (OB.qi < OB_Q.length - 1 && (OB_Q[OB.qi].id in OB.a) && ["name","age","sex","height","weight"].includes(OB_Q[OB.qi].id)) OB.qi++; }   // a rebuild skips the personal basics
-  }
+
+
+  if (a === "go:intake") obToIntake();
+
+
   if (a.startsWith("go:")) return obGo(a.slice(3));
   if (a === "email"){
     const v = (document.getElementById("obEmail").value || "").trim().toLowerCase(); if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)){ toast("That doesn't look like an email."); return; }
@@ -710,7 +702,7 @@ document.addEventListener("click", async e => {
     let v = (document.getElementById("obGoal").value || "").trim().replace(/^i want to\s+/i, "");
     if (!v){ toast("Write your goal, or tap one of the examples."); return; }
     v = v.charAt(0).toUpperCase() + v.slice(1);
-    OB.goalText = v; OB.goal = {cat: goalCat(v), label: v}; return obGo("haspath");
+    OB.goalText = v; OB.goal = {cat: goalCat(v), label: v}; return obGo("times");
   }
   if (a === "fxadd"){
     const i = document.getElementById("obFixed"), f = parseFixed(i && i.value);
@@ -719,12 +711,7 @@ document.addEventListener("click", async e => {
     OB.fixed.push(f); obRender(); const n = document.getElementById("obFixed"); if (n) n.focus(); return;
   }
   if (a.startsWith("fxdel:")){ OB.fixed.splice(Number(a.slice(6)), 1); return obRender(); }
-  if (a === "gymadd"){
-    const i = document.getElementById("obGym"), v = (i && i.value || "").trim().replace(/^i (frequent|go to|use|train at)\s+/i, "");
-    if (!v) return;
-    OB.gyms.push(v.charAt(0).toUpperCase() + v.slice(1)); obRender(); const n = document.getElementById("obGym"); if (n) n.focus(); return;
-  }
-  if (a.startsWith("gymdel:")){ OB.gyms.splice(Number(a.slice(7)), 1); return obRender(); }
+
   if (a === "ans"){
     const q = OB_Q[OB.qi];
     if (q.type === "multi"){ if (!(OB.a[q.id] || []).length) return; return obNextQ(); }
@@ -751,23 +738,23 @@ document.addEventListener("click", async e => {
   if (a === "copyprompt"){ const t = swolePrompt(OB.av); try { await navigator.clipboard.writeText(t); toast("Prompt copied."); } catch(err){ const el = document.getElementById("obPrompt"); if (el){ const r = document.createRange(); r.selectNodeContents(el); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); } toast("Select and copy the prompt."); } return; }
   if (a.startsWith("coach:")){ OB.coach = a.slice(6); return obRender(); }
   if (a === "allcoaches"){ OB.allCoaches = true; return obRender(); }
-  if (a.startsWith("hp:")){ OB.mode = a.slice(3); if (OB.mode !== "coach") OB.coachQ = ""; return obGo(OB.mode === "coach" ? "findcoach" : "fixed"); }
-  if (a === "coachq"){ OB.coachQ = (document.getElementById("obCoachQ") || {}).value || ""; OB.wantCoach = (document.getElementById("obWantCoach") || {}).value || OB.wantCoach; return obRender(); }
-  if (a.startsWith("fc:")){ const id = a.slice(3); OB.coach = OB.coach === id ? null : id; OB.wantCoach = (document.getElementById("obWantCoach") || {}).value || OB.wantCoach; return obRender(); }
-  if (a === "fcgo"){ OB.wantCoach = ((document.getElementById("obWantCoach") || {}).value || "").trim(); return obGo("fixed"); }
-  if (a.startsWith("gm:")){ const o = obOwn(), m = a.slice(3); o.methods = o.methods.includes(m) ? o.methods.filter(x => x !== m) : [...o.methods, m]; return obRender(); }
-  if (a === "gmadd"){ OB.gmAdding = true; obRender(); const i = document.getElementById("obMethod"); if (i) i.focus(); return; }
-  if (a === "gmsave"){ const m = ((document.getElementById("obMethod") || {}).value || "").trim(); OB.gmAdding = false; if (m){ const o = obOwn(); if (!o.methods.includes(m)) o.methods.push(m); } return obRender(); }
-  if (a.startsWith("gwd:")){ const d = Number(a.slice(4)); OB.gwOpen = OB.gwOpen === d ? null : d; OB.gwCustom = null; return obRender(); }
-  if (a.startsWith("gws:")){ const [, d, ...x] = a.split(":"); obOwn().week[Number(d)] = x.join(":"); OB.gwOpen = null; return obRender(); }
-  if (a.startsWith("gwc:")){ OB.gwCustom = Number(a.slice(4)); obRender(); const i = document.getElementById("obDayText"); if (i) i.focus(); return; }
-  if (a.startsWith("gwcsave:")){ const d = Number(a.slice(8)), v = ((document.getElementById("obDayText") || {}).value || "").trim(); if (v) obOwn().week[d] = v; OB.gwCustom = null; OB.gwOpen = null; return obRender(); }
-  if (a === "gwgo"){
-    const o = obOwn(); o.text = ((document.getElementById("obOwnText") || {}).value || "").trim();
-    if (obOwnDays()) OB.a.days = String(Math.min(6, obOwnDays()));
-    OB.qi = 0; if (OB.rebuild){ while (OB.qi < OB_Q.length - 1 && (OB_Q[OB.qi].id in OB.a) && ["name","age","sex","height","weight"].includes(OB_Q[OB.qi].id)) OB.qi++; }
-    while (OB.qi < OB_Q.length && !obShown(OB_Q[OB.qi])) OB.qi++;
-    return obGo("intake");
+  /* v42 B, C, D */
+  if (a.startsWith("times:")){ const v = a.slice(6); OB.times = v === "unsure" ? 4 : Number(v); if (OB.setN != null && OB.setN > OB.times) OB.setN = OB.times; return obGo("set"); }
+  if (a.startsWith("setn:")){ OB.setN = Number(a.slice(5)); if (!OB.setN) OB.fixed = []; obRender(); const i = document.getElementById("obFixed"); if (i) i.focus(); return; }
+  if (a === "setgo"){
+    const i = document.getElementById("obFixed");
+    if (i && i.value.trim()){ const f = parseFixed(i.value); if (f && f.error === "day"){ toast("Which days? E.g. “Muay Thai Mon–Thu 18:00”."); return; } if (f) OB.fixed.push(f); }
+    if (OB.setN && !OB.fixed.length){ toast("Add your set sessions, e.g. “Muay Thai Mon–Thu 18:00”."); return; }
+    const n = obSetCount(); if (n > (OB.times || 0)) OB.times = Math.min(10, n);   // more set sessions than the total: the rows win
+    OB.setN = n; return obGo("want");
+  }
+  if (a.startsWith("wm:")){ const W = obWant(), m = a.slice(3); W.picks = W.picks.includes(m) ? W.picks.filter(x => x !== m) : [...W.picks, m]; W.text = ((document.getElementById("obWantText") || {}).value || W.text || ""); return obRender(); }
+  if (a === "wmadd"){ OB.wmAdding = true; obRender(); const i = document.getElementById("obMethod"); if (i) i.focus(); return; }
+  if (a === "wmsave"){ const m = ((document.getElementById("obMethod") || {}).value || "").trim(); OB.wmAdding = false; if (m){ const W = obWant(); if (!W.picks.includes(m)) W.picks.push(m); } return obRender(); }
+  if (a === "wantgo"){
+    const W = obWant(); W.text = ((document.getElementById("obWantText") || {}).value || "").trim();
+    const m = ((document.getElementById("obMethod") || {}).value || "").trim(); if (m && !W.picks.includes(m)) W.picks.push(m);
+    OB.wmAdding = false; obToIntake(); return obGo("intake");
   }
   if (a === "changeon"){ OB.changing = true; return obRender(); }
   if (a === "changeoff"){ OB.changing = false; return obRender(); }
@@ -815,7 +802,8 @@ function startRebuild(){
   OB.rebuild = P; OB.a = {...(P.answers || {})}; if (P.name && !OB.a.name) OB.a.name = P.name;
   OB.goalText = P.goal ? P.goal.label : ""; OB.fixed = (P.fixed || []).map(f => ({...f})); OB.gyms = (P.gyms || []).slice();
   OB.coach = P.coach ? coachId(P.coach) : null; OB.fighter = P.fighter || null; OB.avMode = P.fighter ? "fighter" : null; OB.email = P.email || "";
-  OB.mode = P.mode || null; if (P.own) OB.own = JSON.parse(JSON.stringify(P.own)); OB.wantCoach = P.wantCoach || "";
+  OB.times = P.times || null; OB.setN = P.setN ?? (P.fixed || []).reduce((n, f) => n + f.days.length, 0);
+  OB.want = P.want ? JSON.parse(JSON.stringify(P.want)) : {picks: (P.own && P.own.methods || []).map(m => m.replace(/ \/ /g, ", ").replace("80/20 polarised", "80/20 easy and hard")), text: (P.own && P.own.text) || ""};   // v41 profiles: their methods carry over
   OB.step = "goal"; document.documentElement.classList.add("ob-open"); obRender();
 }
 function obCancelRebuild(){ obClearDraft(); const el = document.getElementById("onb"); if (el) el.remove(); document.documentElement.classList.remove("ob-open"); OB = null; }
@@ -824,6 +812,7 @@ function obResume(){
   const d = obLoadDraft(); if (!d || !SB.session) return false;
   OB = {...obInit(), ...d, building: false};
   if (OB.step === "building" && !OB.job && !OB.plan) OB.step = "intake";
+  if (!OB_ORDER.includes(OB.step.split(":")[0])) OB.step = "goal";   // a v41 draft on a step that no longer exists
   if (OB.step === "building" && OB.plan) OB.step = "plan";
   document.documentElement.classList.add("ob-open"); obRender(); return true;
 }
